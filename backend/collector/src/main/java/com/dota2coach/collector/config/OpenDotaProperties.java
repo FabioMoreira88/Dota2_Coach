@@ -11,7 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param requestsPerMinute limite de chamadas por minuto respeitado pelo cliente
  * @param maxAttempts tentativas por chamada em caso de 429, 5xx ou falha de rede
  * @param initialBackoff espera antes da segunda tentativa; dobra a cada nova tentativa
- * @param timeout tempo máximo de conexão e de leitura
+ * @param connectTimeout tempo máximo para abrir a conexão
+ * @param readTimeout tempo máximo esperando a resposta (a OpenDota gratuita às vezes passa de 10 s)
  * @param cacheTtl validade do cache de dados de jogador
  */
 @ConfigurationProperties(prefix = "dota2coach.opendota")
@@ -21,7 +22,8 @@ public record OpenDotaProperties(
         int requestsPerMinute,
         int maxAttempts,
         Duration initialBackoff,
-        Duration timeout,
+        Duration connectTimeout,
+        Duration readTimeout,
         Duration cacheTtl) {
 
     public OpenDotaProperties {
@@ -37,8 +39,11 @@ public record OpenDotaProperties(
         if (initialBackoff == null) {
             initialBackoff = Duration.ofSeconds(1);
         }
-        if (timeout == null) {
-            timeout = Duration.ofSeconds(10);
+        if (connectTimeout == null) {
+            connectTimeout = Duration.ofSeconds(5);
+        }
+        if (readTimeout == null) {
+            readTimeout = Duration.ofSeconds(30);
         }
         if (cacheTtl == null) {
             cacheTtl = Duration.ofMinutes(15);

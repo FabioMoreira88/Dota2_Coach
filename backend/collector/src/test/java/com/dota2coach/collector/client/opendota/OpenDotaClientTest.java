@@ -31,7 +31,8 @@ class OpenDotaClientTest {
 
     private OpenDotaClient client(RestClient.Builder builder, String apiKey) {
         OpenDotaProperties props = new OpenDotaProperties(
-                BASE, apiKey, 6000, 3, Duration.ofSeconds(1), Duration.ofSeconds(5), Duration.ofMinutes(15));
+                BASE, apiKey, 6000, 3, Duration.ofSeconds(1), Duration.ofSeconds(5), Duration.ofSeconds(30),
+                Duration.ofMinutes(15));
         RequestRateLimiter noLimit = new RequestRateLimiter(6000, () -> 0L, d -> { });
         return new OpenDotaClient(builder.baseUrl(BASE).build(), props, noLimit, backoffs::add);
     }

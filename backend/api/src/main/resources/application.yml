@@ -40,5 +40,6 @@ dota2coach:
     requests-per-minute: 50
     max-attempts: 3
     initial-backoff: 1s
-    timeout: 10s
+    connect-timeout: 5s
+    read-timeout: 30s
     cache-ttl: 15m

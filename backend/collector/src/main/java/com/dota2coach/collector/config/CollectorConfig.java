@@ -7,6 +7,7 @@ import com.dota2coach.collector.support.RequestRateLimiter;
 import com.dota2coach.collector.support.Sleeper;
 import com.dota2coach.core.model.PlayerSummary;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
@@ -14,6 +15,7 @@ import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 /** Beans do módulo de coleta. */
@@ -28,10 +30,7 @@ public class CollectorConfig {
         RestClient restClient = builder
                 .baseUrl(properties.baseUrl())
                 .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
-                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
-                        ClientHttpRequestFactorySettings.defaults()
-                                .withConnectTimeout(properties.timeout())
-                                .withReadTimeout(properties.timeout())))
+                .requestFactory(requestFactory(properties.connectTimeout(), properties.readTimeout()))
                 .build();
         return new OpenDotaClient(
                 restClient,
@@ -43,12 +42,21 @@ public class CollectorConfig {
     @Bean
     public SteamOpenIdClient steamOpenIdClient(RestClient.Builder builder, SteamProperties properties) {
         RestClient restClient = builder
-                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
-                        ClientHttpRequestFactorySettings.defaults()
-                                .withConnectTimeout(STEAM_TIMEOUT)
-                                .withReadTimeout(STEAM_TIMEOUT)))
+                .requestFactory(requestFactory(STEAM_TIMEOUT, STEAM_TIMEOUT))
                 .build();
         return new SteamOpenIdClient(restClient, properties.openIdEndpoint());
+    }
+
+    /**
+     * Cliente HTTP do JDK forçado em HTTP/1.1: a negociação HTTP/2 do JDK com alguns servidores e proxies
+     * pode travar até o timeout, e essas APIs não ganham nada com HTTP/2.
+     */
+    private static ClientHttpRequestFactory requestFactory(Duration connectTimeout, Duration readTimeout) {
+        return ClientHttpRequestFactoryBuilder.jdk()
+                .withHttpClientCustomizer(client -> client.version(HttpClient.Version.HTTP_1_1))
+                .build(ClientHttpRequestFactorySettings.defaults()
+                        .withConnectTimeout(connectTimeout)
+                        .withReadTimeout(readTimeout));
     }
 
     @Bean
