@@ -31,7 +31,7 @@ class PlayerDataServiceTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder().baseUrl(BASE);
         server = MockRestServiceServer.bindTo(builder).build();
-        OpenDotaProperties props = new OpenDotaProperties(BASE, "", 6000, 1, null, null, null);
+        OpenDotaProperties props = new OpenDotaProperties(BASE, "", 6000, 1, null, null, null, null);
         OpenDotaClient client = new OpenDotaClient(
                 builder.build(), props, new RequestRateLimiter(6000, () -> 0L, d -> { }), d -> { });
         service = new PlayerDataService(client, Caffeine.newBuilder().<Long, PlayerSummary>build());
