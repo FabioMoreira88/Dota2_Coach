@@ -13,10 +13,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import com.dota2coach.api.config.SecurityConfig;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PingController.class)
-@Import(PingControllerTest.FixedClock.class)
+@Import({PingControllerTest.FixedClock.class, SecurityConfig.class})
 class PingControllerTest {
 
     @Autowired

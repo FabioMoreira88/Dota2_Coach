@@ -27,6 +27,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Só o módulo api tem classe main; os outros pulam o spring-boot:run. -->
+        <spring-boot.run.skip>true</spring-boot.run.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

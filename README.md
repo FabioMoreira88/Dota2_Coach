@@ -34,6 +34,9 @@ Pré-requisitos: JDK 21, Docker Desktop, Node 22.
 4. Teste: <http://localhost:8080/api/v1/ping> deve responder `{"status":"ok", ...}`.
 5. Resumo público de um jogador pela OpenDota (account id de 32 bits, o "ID de amigo" do Dota):
    <http://localhost:8080/api/v1/players/34839344/summary>
+6. Login pela Steam: abra <http://localhost:8080/api/v1/auth/steam/login>, entre na Steam e, de volta
+   (o front ainda não existe, então a página de retorno em `localhost:3000` não abre), acesse
+   <http://localhost:8080/api/v1/me> no mesmo navegador para ver seu nome e medalha.
 
 ## Testes
 
