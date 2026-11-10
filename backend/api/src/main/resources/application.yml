@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: dota2-coach
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
