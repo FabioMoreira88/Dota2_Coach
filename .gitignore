@@ -1,0 +1,25 @@
+# Segredos
+.env
+*.env.local
+
+# Gradle / Java
+.gradle/
+build/
+target/
+out/
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Node / Next.js
+node_modules/
+.next/
+frontend/out/
+
+# Logs
+*.log
