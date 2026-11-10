@@ -12,6 +12,10 @@
 
     <artifactId>api</artifactId>
     <name>Dota 2 Coach - api</name>
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <description>API REST (Spring Boot): controllers, DTOs, seguranca e configuracao</description>
 
     <dependencies>
