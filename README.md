@@ -32,6 +32,8 @@ Pré-requisitos: JDK 21, Docker Desktop, Node 22.
    ```
    No Windows use `mvnw.cmd`.
 4. Teste: <http://localhost:8080/api/v1/ping> deve responder `{"status":"ok", ...}`.
+5. Resumo público de um jogador pela OpenDota (account id de 32 bits, o "ID de amigo" do Dota):
+   <http://localhost:8080/api/v1/players/34839344/summary>
 
 ## Testes
 

@@ -19,3 +19,13 @@ management:
   endpoint:
     health:
       show-details: never
+
+dota2coach:
+  opendota:
+    base-url: https://api.opendota.com/api
+    api-key: ${OPENDOTA_API_KEY:}
+    requests-per-minute: 50
+    max-attempts: 3
+    initial-backoff: 1s
+    timeout: 10s
+    cache-ttl: 15m
