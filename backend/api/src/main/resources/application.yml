@@ -7,6 +7,13 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 24h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}
   error:
     include-stacktrace: never
     include-message: never
@@ -21,6 +28,12 @@ management:
       show-details: never
 
 dota2coach:
+  app:
+    base-url: ${APP_BASE_URL:http://localhost:8080}
+    frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  steam:
+    open-id-endpoint: https://steamcommunity.com/openid/login
+    api-key: ${STEAM_API_KEY:}
   opendota:
     base-url: https://api.opendota.com/api
     api-key: ${OPENDOTA_API_KEY:}

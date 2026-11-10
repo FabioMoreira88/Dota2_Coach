@@ -1,11 +1,13 @@
 package com.dota2coach.collector.config;
 
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
+import com.dota2coach.collector.client.steam.SteamOpenIdClient;
 import com.dota2coach.collector.service.PlayerDataService;
 import com.dota2coach.collector.support.RequestRateLimiter;
 import com.dota2coach.collector.support.Sleeper;
 import com.dota2coach.core.model.PlayerSummary;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
@@ -16,8 +18,10 @@ import org.springframework.web.client.RestClient;
 
 /** Beans do módulo de coleta. */
 @Configuration
-@EnableConfigurationProperties(OpenDotaProperties.class)
+@EnableConfigurationProperties({OpenDotaProperties.class, SteamProperties.class})
 public class CollectorConfig {
+
+    private static final Duration STEAM_TIMEOUT = Duration.ofSeconds(10);
 
     @Bean
     public OpenDotaClient openDotaClient(RestClient.Builder builder, OpenDotaProperties properties) {
@@ -34,6 +38,17 @@ public class CollectorConfig {
                 properties,
                 new RequestRateLimiter(properties.requestsPerMinute()),
                 Sleeper.SYSTEM);
+    }
+
+    @Bean
+    public SteamOpenIdClient steamOpenIdClient(RestClient.Builder builder, SteamProperties properties) {
+        RestClient restClient = builder
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
+                        ClientHttpRequestFactorySettings.defaults()
+                                .withConnectTimeout(STEAM_TIMEOUT)
+                                .withReadTimeout(STEAM_TIMEOUT)))
+                .build();
+        return new SteamOpenIdClient(restClient, properties.openIdEndpoint());
     }
 
     @Bean
