@@ -1,6 +1,9 @@
 spring:
   application:
     name: dota2-coach
+  config:
+    # Lê as chaves do .env na raiz do repositório (o spring-boot:run roda dentro de backend/api).
+    import: "optional:file:../../.env[.properties],optional:file:.env[.properties]"
   threads:
     virtual:
       enabled: true
@@ -43,3 +46,25 @@ dota2coach:
     connect-timeout: 5s
     read-timeout: 30s
     cache-ttl: 15m
+  coach:
+    providers:
+      claude:
+        type: anthropic
+        api-key: ${ANTHROPIC_API_KEY:}
+        model: claude-opus-5-5
+        effort: high
+        input-price-per-million: 4.0
+        output-price-per-million: 20.0
+        read-timeout: 10m
+      llama-70b-groq:
+        type: openai-compatible
+        base-url: https://api.groq.com/openai/v1
+        api-key: ${GROQ_API_KEY:}
+        model: llama-3.3-70b-versatile
+      qwen-7b-local:
+        type: openai-compatible
+        base-url: http://localhost:11434/v1
+        model: qwen2.5:7b
+        enabled: false
+        api-key-required: false
+        read-timeout: 15m
