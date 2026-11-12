@@ -38,6 +38,23 @@ Pré-requisitos: JDK 21, Docker Desktop, Node 22.
    (o front ainda não existe, então a página de retorno em `localhost:3000` não abre), acesse
    <http://localhost:8080/api/v1/me> no mesmo navegador para ver seu nome e medalha.
 
+## Raio-X do perfil (linha de comando)
+
+Gera um relatório em Markdown com heróis, funções, rotas, fundamentos, itens e aderência ao meta de uma conta,
+usando só dados públicos da OpenDota. Não precisa de banco nem do Redis. Na pasta `backend`:
+
+```
+./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.raio-x.account-id=34839344"
+```
+
+O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `arguments`:
+
+- `--dota2coach.raio-x.output=caminho.md`: outro arquivo de saída (relativo a `backend/api`).
+- `--dota2coach.raio-x.parse-limit=0`: não pedir análise de replays (padrão: até 20 partidas recentes).
+
+Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
+uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
+
 ## Testes
 
 ```
