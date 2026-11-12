@@ -8,4 +8,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record OpenDotaItemConstant(
         @JsonProperty("id") int id,
         @JsonProperty("dname") String displayName,
-        @JsonProperty("cost") Integer cost) {}
+        @JsonProperty("cost") Integer cost,
+        @JsonProperty("created") Boolean created) {}

@@ -54,6 +54,8 @@ public class XRayCalculator {
     static final double MISSING_META_MAX_SHARE = 0.10;
     static final int MISSING_META_CANDIDATES = 5;
     private static final Duration LAST_30_DAYS = Duration.ofDays(30);
+    /** Itens básicos (sem receita) que normalmente são mantidos como item final. */
+    static final Set<String> STANDALONE_FINAL_ITEMS = Set.of("blink");
 
     public ProfileXRay calculate(ProfileSnapshot snapshot) {
         List<MatchRecord> all = snapshot.matches().stream()
@@ -263,9 +265,18 @@ public class XRayCalculator {
         return Stream.concat(a.stream(), b.stream()).toList();
     }
 
-    /** Item desconhecido no catálogo conta como principal: melhor mostrar do que esconder. */
+    /**
+     * Item principal: custa {@link #CORE_ITEM_MIN_COST} ou mais e é montado (BKB, Treads) ou é um item básico que
+     * costuma ficar no inventário até o fim (Blink). Componentes caros como Ogre Axe e Hyperstone ficam de fora,
+     * porque a popularidade da OpenDota conta cada compra, inclusive de componentes. Item desconhecido no catálogo
+     * conta como principal: melhor mostrar do que esconder.
+     */
     static boolean isCoreItem(Item item) {
-        return item == null || item.cost() >= CORE_ITEM_MIN_COST;
+        if (item == null) {
+            return true;
+        }
+        return item.cost() >= CORE_ITEM_MIN_COST
+                && (item.assembled() || STANDALONE_FINAL_ITEMS.contains(item.key()));
     }
 
     static double shareOnWinningMetaHeroes(List<MatchRecord> recent, MetaView meta) {

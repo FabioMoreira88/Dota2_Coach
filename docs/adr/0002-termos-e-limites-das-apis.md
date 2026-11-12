@@ -1,7 +1,7 @@
 # ADR 0002: Termos e limites das APIs de dados
 
 - **Data:** 11/11/2026
-- **Status:** proposta (três pontos ainda precisam ser confirmados, ver "Pendências")
+- **Status:** aceita (dois pontos ainda precisam ser confirmados, ver "Pendências")
 
 ## Contexto
 
@@ -14,7 +14,7 @@ Fontes avaliadas: OpenDota, STRATZ, Steam Web API e Dotabuff.
 
 | Fonte | Uso | Limites conhecidos | Custo |
 | --- | --- | --- | --- |
-| OpenDota | Fonte principal: partidas, heróis, itens, meta, análise de replays | Sem chave: cerca de 60 chamadas/min e 2.000/dia. Com chave paga: limites maiores, cobrança por chamada | Grátis em desenvolvimento; plano pago em produção |
+| OpenDota | Fonte principal: partidas, heróis, itens, meta, análise de replays | Grátis, sem chave: 60 chamadas/min e 3.000/dia. Premium: 3.000/min, sem limite diário | Grátis em desenvolvimento; premium em produção a US$ 0,0001 por chamada |
 | Steam Web API | Login (OpenID, sem chave) e dados de perfil | 100.000 chamadas/dia por chave | Grátis |
 | STRATZ | Fora do MVP. Avaliar depois como fonte complementar | Token obrigatório; 20/s, 250/min, 2.000/h e 10.000/dia no token padrão (dados de 2020 e 2021) | Grátis com cadastro; tiers maiores exigem cota de indicações |
 | Dotabuff | Não usar | Sem API pública; os termos proíbem raspagem | — |
@@ -23,9 +23,10 @@ Fontes avaliadas: OpenDota, STRATZ, Steam Web API e Dotabuff.
 
 - É a única fonte que entrega, sem cadastro, partidas completas, constantes, meta por faixa e análise de replays.
 - O cliente já respeita 50 chamadas/min, tenta de novo em 429 e 5xx e guarda cache. Um Raio-X faz cerca de 15
-  chamadas, então o plano grátis aguenta perto de 130 Raio-X por dia: suficiente para a fase 0 e o beta fechado.
-- Em produção usamos a chave paga (`OPENDOTA_API_KEY`), que o cliente já envia quando configurada. O custo entra
-  no orçamento mensal junto com a IA.
+  chamadas, então o plano grátis aguenta perto de 200 Raio-X por dia: suficiente para a fase 0 e o beta fechado.
+- Em produção usamos a chave premium (`OPENDOTA_API_KEY`), que o cliente já envia quando configurada. O preço é
+  US$ 0,01 a cada 100 chamadas, cobrado no cartão no começo do mês, e erros 500 não são cobrados. Um Raio-X custa
+  cerca de US$ 0,0015; mil Raio-X por mês saem por uns US$ 1,50. O custo entra no orçamento mensal junto com a IA.
 - Mantemos o cache e a fila de coleta (Sprint 3) para não repetir chamadas: dados de partida antiga não mudam.
 
 ### Steam Web API
@@ -60,9 +61,9 @@ login da Steam. Obrigações que viram requisitos do produto:
 
 ## Pendências
 
-1. **Uso comercial e preço da OpenDota:** a página de planos (<https://www.opendota.com/api-keys>) só abre com
-   JavaScript e não consegui ler daqui. Fabio confere no navegador e anotamos aqui o preço por chamada, os limites
-   do plano pago e se o uso comercial está liberado.
+1. **Uso comercial da OpenDota:** a página de planos convida a "levar estatísticas aos seus usuários" e cobra
+   por chamada, mas não fala de uso comercial de forma explícita. Antes do lançamento pago, confirmar com a equipe
+   da OpenDota (Discord ou e-mail).
 2. **Limites atuais da STRATZ:** os números acima vêm de 2020 e 2021. Só confirmar se a STRATZ voltar ao plano.
 3. **Região do banco:** decidir o país de hospedagem antes do beta, para constar na política de privacidade.
 
@@ -77,8 +78,6 @@ login da Steam. Obrigações que viram requisitos do produto:
 ## Fontes
 
 - [Termos da Steam Web API](https://steamcommunity.com/dev/apiterms)
-- [Planos da OpenDota](https://www.opendota.com/api-keys) (pendente de leitura)
-- [Resumo da API da OpenDota na Jentic](https://jentic.com/apis/opendota.com/opendota.md), com os limites do plano
-  grátis
+- [Planos da OpenDota](https://www.opendota.com/api-keys), lidos no navegador em 11/11/2026
 - [Limites da STRATZ por tipo de token (issue da base de conhecimento)](https://github.com/STRATZ-eSports/knowledge-base/issues/15)
 - [Anúncio da STRATZ sobre tokens e cotas](https://stratz.medium.com/stratz-api-major-update-5557335dbdfd)
