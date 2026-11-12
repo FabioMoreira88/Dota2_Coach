@@ -1,6 +1,7 @@
 package com.dota2coach.api.config;
 
 import com.dota2coach.api.security.JsonAuthenticationEntryPoint;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +33,9 @@ public class SecurityConfig {
         return new HttpSessionSecurityContextRepository();
     }
 
+    /** Só existe com servidor web; o comando Raio-X sobe a aplicação sem servidor. */
     @Bean
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
