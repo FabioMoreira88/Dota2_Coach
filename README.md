@@ -55,6 +55,23 @@ O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
 uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
 
+## Comparativo de IA (linha de comando)
+
+Manda o Raio-X de uma conta para cada modelo configurado e salva os textos às cegas, para você dar notas antes
+de saber qual modelo escreveu cada um. Precisa do Raio-X já gerado (seção acima).
+
+1. No `.env` da raiz, preencha `ANTHROPIC_API_KEY` (<https://console.anthropic.com>) e `GROQ_API_KEY`
+   (grátis em <https://console.groq.com/keys>). Modelo sem chave fica de fora do comparativo.
+2. Na pasta `backend`:
+   ```
+   ./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.coach.account-id=34839344"
+   ```
+3. Leia `docs/fase0/comparativo-ia-34839344.md`, preencha a tabela de notas e só depois abra
+   `docs/fase0/gabarito-ia-34839344.md`, que mostra o modelo, o tempo, os tokens e o custo de cada texto.
+
+Modelos padrão: Claude Opus 5.5 (cerca de US$ 0,05 a 0,10 por relatório) e Llama 3.3 70B pela Groq (grátis).
+Para incluir um modelo local no Ollama, acrescente `--dota2coach.coach.providers.qwen-7b-local.enabled=true`.
+
 ## Testes
 
 ```

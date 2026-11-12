@@ -30,6 +30,7 @@
         <!-- Só o módulo api tem classe main; os outros pulam o spring-boot:run. -->
         <spring-boot.run.skip>true</spring-boot.run.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <anthropic-java.version>3.8.0</anthropic-java.version>
     </properties>
 
     <dependencyManagement>
@@ -53,6 +54,11 @@
                 <groupId>com.dota2coach</groupId>
                 <artifactId>coach-ai</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.anthropic</groupId>
+                <artifactId>anthropic-java</artifactId>
+                <version>${anthropic-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
