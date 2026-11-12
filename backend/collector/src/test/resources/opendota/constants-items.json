@@ -1,0 +1,48 @@
+{
+ "blink": {
+  "id": 1,
+  "dname": "Blink Dagger",
+  "cost": 2250,
+  "qual": "component"
+ },
+ "black_king_bar": {
+  "id": 116,
+  "dname": "Black King Bar",
+  "cost": 4050,
+  "qual": "epic"
+ },
+ "tango": {
+  "id": 44,
+  "dname": "Tango",
+  "cost": 90,
+  "qual": "consumable"
+ },
+ "power_treads": {
+  "id": 63,
+  "dname": "Power Treads",
+  "cost": 1400,
+  "qual": "common"
+ },
+ "maelstrom": {
+  "id": 166,
+  "dname": "Maelstrom",
+  "cost": 2950,
+  "qual": "artifact"
+ },
+ "dragon_lance": {
+  "id": 236,
+  "dname": "Dragon Lance",
+  "cost": 1900,
+  "qual": "artifact"
+ },
+ "aether_lens": {
+  "id": 232,
+  "dname": "Aether Lens",
+  "cost": 2275,
+  "qual": "rare"
+ },
+ "recipe_sem_id": {
+  "dname": "Recipe",
+  "cost": 0
+ }
+}
