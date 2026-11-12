@@ -69,7 +69,7 @@ de saber qual modelo escreveu cada um. Precisa do Raio-X já gerado (seção aci
 3. Leia `docs/fase0/comparativo-ia-34839344.md`, preencha a tabela de notas e só depois abra
    `docs/fase0/gabarito-ia-34839344.md`, que mostra o modelo, o tempo, os tokens e o custo de cada texto.
 
-Modelos padrão: Claude Opus 5.5 (cerca de US$ 0,05 a 0,10 por relatório) e Llama 3.3 70B pela Groq (grátis).
+Modelos padrão: Claude Opus 5.5 (cerca de US$ 0,05 a 0,10 por relatório) e gpt-oss-120b pela Groq (grátis; o Llama 3.3 70B foi desligado pela Groq em agosto de 2026).
 Para incluir um modelo local no Ollama, acrescente `--dota2coach.coach.providers.qwen-7b-local.enabled=true`.
 
 ## Testes
