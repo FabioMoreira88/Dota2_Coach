@@ -1,0 +1,4 @@
+[
+ {"id":35,"localized_name":"Sniper","1_pick":1000,"1_win":520,"2_pick":2000,"2_win":1010,"3_pick":3000,"3_win":1500,"4_pick":4000,"4_win":2000,"5_pick":5000,"5_win":2600,"6_pick":"6000","6_win":"3000","7_pick":7000,"7_win":3400,"8_pick":800,"8_win":380,"pro_pick":12,"pro_win":5,"turbo_picks":99},
+ {"id":84,"localized_name":"Ogre Magi","5_pick":4000,"5_win":2200}
+]

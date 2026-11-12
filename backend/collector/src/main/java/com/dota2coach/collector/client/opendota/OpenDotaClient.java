@@ -1,6 +1,12 @@
 package com.dota2coach.collector.client.opendota;
 
 import com.dota2coach.collector.config.OpenDotaProperties;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
+import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaParseRequestResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaPlayerHeroResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaPlayerResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaWinLossResponse;
@@ -8,11 +14,14 @@ import com.dota2coach.collector.support.RequestRateLimiter;
 import com.dota2coach.collector.support.Sleeper;
 import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import java.time.Duration;
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -64,12 +73,64 @@ public class OpenDotaClient {
         return heroes == null ? List.of() : heroes;
     }
 
-    private <T> T get(Function<UriBuilder, java.net.URI> uri, ParameterizedTypeReference<T> type) {
+    /**
+     * Todas as partidas do jogador, da mais recente para a mais antiga. Por padrão a OpenDota devolve só
+     * partidas "significativas" (exclui Turbo e modos de evento).
+     */
+    public List<OpenDotaMatchResponse> getMatches(long accountId) {
+        List<OpenDotaMatchResponse> matches = get(
+                uri -> uri.path("/players/{id}/matches")
+                        .queryParam("project", OpenDotaMatchResponse.PROJECTED_FIELDS.toArray())
+                        .build(accountId),
+                new ParameterizedTypeReference<List<OpenDotaMatchResponse>>() {});
+        return matches == null ? List.of() : matches;
+    }
+
+    /** Heróis do jogo, indexados pelo id em texto. */
+    public Map<String, OpenDotaHeroConstant> getHeroConstants() {
+        Map<String, OpenDotaHeroConstant> heroes = get(uri -> uri.path("/constants/heroes").build(),
+                new ParameterizedTypeReference<Map<String, OpenDotaHeroConstant>>() {});
+        return heroes == null ? Map.of() : heroes;
+    }
+
+    /** Itens do jogo, indexados pelo nome interno. */
+    public Map<String, OpenDotaItemConstant> getItemConstants() {
+        Map<String, OpenDotaItemConstant> items = get(uri -> uri.path("/constants/items").build(),
+                new ParameterizedTypeReference<Map<String, OpenDotaItemConstant>>() {});
+        return items == null ? Map.of() : items;
+    }
+
+    /** Escolhas e vitórias de cada herói em partidas públicas recentes, por faixa de medalha. */
+    public List<OpenDotaHeroStatsResponse> getHeroStats() {
+        List<OpenDotaHeroStatsResponse> stats = get(uri -> uri.path("/heroStats").build(),
+                new ParameterizedTypeReference<List<OpenDotaHeroStatsResponse>>() {});
+        return stats == null ? List.of() : stats;
+    }
+
+    public OpenDotaItemPopularityResponse getItemPopularity(int heroId) {
+        return get(uri -> uri.path("/heroes/{id}/itemPopularity").build(heroId),
+                new ParameterizedTypeReference<OpenDotaItemPopularityResponse>() {});
+    }
+
+    /**
+     * Pede à OpenDota que baixe e analise o replay da partida. A análise é assíncrona: os dados aparecem
+     * na partida minutos depois. Replays só ficam disponíveis por algumas semanas.
+     */
+    public OpenDotaParseRequestResponse requestParse(long matchId) {
+        return call(HttpMethod.POST, uri -> uri.path("/request/{id}").build(matchId),
+                new ParameterizedTypeReference<OpenDotaParseRequestResponse>() {});
+    }
+
+    private <T> T get(Function<UriBuilder, URI> uri, ParameterizedTypeReference<T> type) {
+        return call(HttpMethod.GET, uri, type);
+    }
+
+    private <T> T call(HttpMethod method, Function<UriBuilder, URI> uri, ParameterizedTypeReference<T> type) {
         Duration backoff = properties.initialBackoff();
         for (int attempt = 1; ; attempt++) {
             try {
                 rateLimiter.acquire();
-                return restClient.get()
+                return restClient.method(method)
                         .uri(builder -> uri.apply(withApiKey(builder)))
                         .retrieve()
                         .body(type);

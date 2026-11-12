@@ -1,0 +1,52 @@
+{
+ "1": {
+  "id": 1,
+  "name": "npc_dota_hero_antimage",
+  "localized_name": "Anti-Mage",
+  "primary_attr": "agi",
+  "attack_type": "Melee",
+  "roles": [
+   "Carry",
+   "Escape",
+   "Nuker"
+  ]
+ },
+ "35": {
+  "id": 35,
+  "name": "npc_dota_hero_sniper",
+  "localized_name": "Sniper",
+  "primary_attr": "agi",
+  "attack_type": "Ranged",
+  "roles": [
+   "Carry",
+   "Nuker"
+  ]
+ },
+ "84": {
+  "id": 84,
+  "name": "npc_dota_hero_ogre_magi",
+  "localized_name": "Ogre Magi",
+  "primary_attr": "str",
+  "attack_type": "Melee",
+  "roles": [
+   "Support",
+   "Nuker",
+   "Disabler",
+   "Durable",
+   "Initiator"
+  ]
+ },
+ "14": {
+  "id": 14,
+  "name": "npc_dota_hero_pudge",
+  "localized_name": "Pudge",
+  "primary_attr": "str",
+  "attack_type": "Melee",
+  "roles": [
+   "Disabler",
+   "Initiator",
+   "Durable",
+   "Nuker"
+  ]
+ }
+}

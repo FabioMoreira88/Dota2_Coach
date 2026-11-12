@@ -3,11 +3,13 @@ package com.dota2coach.collector.config;
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
 import com.dota2coach.collector.client.steam.SteamOpenIdClient;
 import com.dota2coach.collector.service.PlayerDataService;
+import com.dota2coach.collector.service.ProfileSnapshotService;
 import com.dota2coach.collector.support.RequestRateLimiter;
 import com.dota2coach.collector.support.Sleeper;
 import com.dota2coach.core.model.PlayerSummary;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.http.HttpClient;
+import java.time.Clock;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
@@ -65,5 +67,11 @@ public class CollectorConfig {
                 .expireAfterWrite(properties.cacheTtl())
                 .maximumSize(10_000)
                 .<Long, PlayerSummary>build());
+    }
+
+    @Bean
+    public ProfileSnapshotService profileSnapshotService(
+            OpenDotaClient client, PlayerDataService playerDataService, Clock clock) {
+        return new ProfileSnapshotService(client, playerDataService, clock);
     }
 }
