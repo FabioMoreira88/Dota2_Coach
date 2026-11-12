@@ -18,12 +18,14 @@ class OpenDotaReferenceMapperTest {
     @Test
     void ignoraItensSemIdEUsaNomeInternoQuandoFaltaONome() {
         Map<Integer, Item> items = OpenDotaReferenceMapper.toItems(Map.of(
-                "blink", new OpenDotaItemConstant(1, "Blink Dagger", 2250),
-                "recipe_sem_id", new OpenDotaItemConstant(0, "Recipe", 0),
-                "item_novo", new OpenDotaItemConstant(999, null, null)));
+                "blink", new OpenDotaItemConstant(1, "Blink Dagger", 2250, false),
+                "black_king_bar", new OpenDotaItemConstant(116, "Black King Bar", 4050, true),
+                "recipe_sem_id", new OpenDotaItemConstant(0, "Recipe", 0, null),
+                "item_novo", new OpenDotaItemConstant(999, null, null, null)));
 
-        assertThat(items).containsOnlyKeys(1, 999);
-        assertThat(items.get(1)).isEqualTo(new Item(1, "blink", "Blink Dagger", 2250));
+        assertThat(items).containsOnlyKeys(1, 116, 999);
+        assertThat(items.get(1)).isEqualTo(new Item(1, "blink", "Blink Dagger", 2250, false));
+        assertThat(items.get(116).assembled()).isTrue();
         assertThat(items.get(999).name()).isEqualTo("item_novo");
         assertThat(items.get(999).cost()).isZero();
     }

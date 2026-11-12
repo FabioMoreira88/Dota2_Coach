@@ -116,10 +116,11 @@ class XRayCalculatorTest {
         HeroItems sniper = x.items().get(0);
         assertThat(sniper.matchesWithItems()).isEqualTo(50);
         assertThat(sniper.playerTop()).extracting(ItemUse::name)
+                .as("Blink é básico, mas conta como item final")
                 .containsExactly("Blink Dagger", "Power Treads", "Maelstrom");
         assertThat(sniper.playerTop()).extracting(ItemUse::meta).containsExactly(false, true, true);
         assertThat(sniper.adherence()).isCloseTo(2.0 / 3, within(1e-9));
-        assertThat(sniper.metaTop()).doesNotContain("Tango");
+        assertThat(sniper.metaTop()).doesNotContain("Tango", "Hyperstone");
         assertThat(sniper.missingMeta()).containsExactly("Dragon Lance", "Black King Bar", "Desolator");
     }
 

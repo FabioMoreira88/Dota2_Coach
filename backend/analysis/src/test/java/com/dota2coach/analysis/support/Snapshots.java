@@ -34,6 +34,7 @@ public final class Snapshots {
     public static final int BLINK = 1;
     public static final int TANGO = 44;
     public static final int DESOLATOR = 168;
+    public static final int HYPERSTONE = 64;
 
     private Snapshots() {}
 
@@ -46,13 +47,14 @@ public final class Snapshots {
 
     public static Map<Integer, Item> items() {
         return Map.of(
-                TREADS, new Item(TREADS, "power_treads", "Power Treads", 1400),
-                MAELSTROM, new Item(MAELSTROM, "maelstrom", "Maelstrom", 2950),
-                DRAGON_LANCE, new Item(DRAGON_LANCE, "dragon_lance", "Dragon Lance", 1900),
-                BKB, new Item(BKB, "black_king_bar", "Black King Bar", 4050),
-                BLINK, new Item(BLINK, "blink", "Blink Dagger", 2250),
-                TANGO, new Item(TANGO, "tango", "Tango", 90),
-                DESOLATOR, new Item(DESOLATOR, "desolator", "Desolator", 3500));
+                TREADS, new Item(TREADS, "power_treads", "Power Treads", 1400, true),
+                MAELSTROM, new Item(MAELSTROM, "maelstrom", "Maelstrom", 2950, true),
+                DRAGON_LANCE, new Item(DRAGON_LANCE, "dragon_lance", "Dragon Lance", 1900, true),
+                BKB, new Item(BKB, "black_king_bar", "Black King Bar", 4050, true),
+                BLINK, new Item(BLINK, "blink", "Blink Dagger", 2250, false),
+                TANGO, new Item(TANGO, "tango", "Tango", 90, false),
+                DESOLATOR, new Item(DESOLATOR, "desolator", "Desolator", 3500, true),
+                HYPERSTONE, new Item(HYPERSTONE, "hyperstone", "Hyperstone", 2000, false));
     }
 
     public static Map<Integer, HeroMeta> meta() {
@@ -73,7 +75,7 @@ public final class Snapshots {
                 GamePhase.START, Map.of(TANGO, 900),
                 GamePhase.EARLY, Map.of(TREADS, 800, TANGO, 500),
                 GamePhase.MID, Map.of(MAELSTROM, 600, DRAGON_LANCE, 500),
-                GamePhase.LATE, Map.of(BKB, 400, DESOLATOR, 300))));
+                GamePhase.LATE, Map.of(HYPERSTONE, 500, BKB, 400, DESOLATOR, 300))));
     }
 
     public static PlayerSummary player(Integer rankTier) {

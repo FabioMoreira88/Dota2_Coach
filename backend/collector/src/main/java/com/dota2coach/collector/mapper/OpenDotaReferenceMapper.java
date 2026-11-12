@@ -38,7 +38,8 @@ public final class OpenDotaReferenceMapper {
                         e.getValue().id(),
                         e.getKey(),
                         e.getValue().displayName() == null ? e.getKey() : e.getValue().displayName(),
-                        e.getValue().cost() == null ? 0 : e.getValue().cost()))
+                        e.getValue().cost() == null ? 0 : e.getValue().cost(),
+                        Boolean.TRUE.equals(e.getValue().created())))
                 .collect(Collectors.toMap(Item::id, Function.identity(), (a, b) -> a));
     }
 
