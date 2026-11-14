@@ -1,5 +1,6 @@
 package com.dota2coach.core.model;
 
+import com.dota2coach.core.enums.DamageType;
 import java.util.Map;
 
 /**
@@ -7,12 +8,23 @@ import java.util.Map;
  *
  * @param heroes heróis do jogo por id
  * @param items itens do jogo por id
+ * @param damageTypes tipo de dano de cada habilidade, pelo nome interno
+ * @param heroDurations desempenho por duração dos heróis da partida, por id
+ * @param playerMatchups desempenho do herói do jogador analisado contra cada herói, em partidas públicas
  */
-public record MatchSnapshot(AnalyzedMatch match, Map<Integer, Hero> heroes, Map<Integer, Item> items) {
+public record MatchSnapshot(
+        AnalyzedMatch match,
+        Map<Integer, Hero> heroes,
+        Map<Integer, Item> items,
+        Map<String, DamageType> damageTypes,
+        Map<Integer, HeroDurations> heroDurations,
+        HeroMatchups playerMatchups) {
 
     public MatchSnapshot {
         heroes = Map.copyOf(heroes);
         items = Map.copyOf(items);
+        damageTypes = Map.copyOf(damageTypes);
+        heroDurations = Map.copyOf(heroDurations);
     }
 
     public String heroName(Integer heroId) {

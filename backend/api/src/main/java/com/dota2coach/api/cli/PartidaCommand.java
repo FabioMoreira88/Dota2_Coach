@@ -92,7 +92,8 @@ public class PartidaCommand implements ApplicationRunner {
                     + " offlane, soft-support, hard-support).");
         }
         log.info("Partida: buscando a partida {} na OpenDota...", matchId);
-        MatchSnapshot snapshot = matchDataService.collect(matchId).orElseThrow(() -> new IllegalStateException(
+        MatchSnapshot snapshot = matchDataService.collect(matchId, properties.accountId())
+                .orElseThrow(() -> new IllegalStateException(
                 "A OpenDota ainda não tem o resultado da partida " + matchId + ". Confira o id."));
         if (!snapshot.match().replayParsed()) {
             requestParse(matchId);

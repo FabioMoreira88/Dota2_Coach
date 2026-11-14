@@ -18,6 +18,7 @@ import java.util.Map;
  * @param killParticipation (abates + assistências) / abates do time, ou nulo se o time não matou ninguém
  * @param percentiles percentil (0 a 1) do jogador entre as partidas públicas do herói, por métrica
  * @param usual padrão do jogador segundo o último Raio-X, ou nulo se ainda não há Raio-X salvo
+ * @param context draft, composição e matchups dos dois times
  */
 public record MatchAnalysis(
         long matchId,
@@ -41,7 +42,8 @@ public record MatchAnalysis(
         int observersPlaced,
         int sentriesPlaced,
         List<TeamGold> teamGold,
-        Usual usual) {
+        Usual usual,
+        Context context) {
 
     public MatchAnalysis {
         percentiles = Map.copyOf(percentiles);
@@ -128,4 +130,69 @@ public record MatchAnalysis(
             boolean lastHitsAt10ForHero,
             Double deniesAt10,
             double secondsDeadPerMatch) {}
+
+    /**
+     * Contexto da partida: os dois times, não só o jogador.
+     *
+     * @param picks picks dos dois times, na ordem do draft quando {@code pickOrderKnown}
+     * @param yourTeamPickNumber em que pick do seu time você escolheu (1 a 5), ou nulo sem a ordem
+     * @param teams seu time primeiro
+     * @param damageReceivedByYou de que tipo foi o dano que você recebeu de heróis
+     * @param matchups seu herói contra cada herói adversário, em partidas públicas recentes
+     * @param power taxa de vitória média dos heróis de cada time em partidas públicas, por duração
+     */
+    public record Context(
+            List<Pick> picks,
+            boolean pickOrderKnown,
+            Integer yourTeamPickNumber,
+            List<TeamProfile> teams,
+            DamageShare damageReceivedByYou,
+            List<Matchup> matchups,
+            List<PhasePower> power) {
+
+        public static final Context EMPTY =
+                new Context(List.of(), false, null, List.of(), DamageShare.NONE, List.of(), List.of());
+
+        public Context {
+            picks = List.copyOf(picks);
+            teams = List.copyOf(teams);
+            matchups = List.copyOf(matchups);
+            power = List.copyOf(power);
+        }
+    }
+
+    public record Pick(Integer order, String heroName, boolean yourTeam, boolean you) {}
+
+    /**
+     * @param damageDealt de que tipo foi o dano que o time causou em heróis
+     * @param roles funções oficiais dos heróis do time, com quantos heróis têm cada uma
+     */
+    public record TeamProfile(boolean yours, boolean won, List<String> heroes, DamageShare damageDealt,
+            List<RoleCount> roles) {
+
+        public TeamProfile {
+            heroes = List.copyOf(heroes);
+            roles = List.copyOf(roles);
+        }
+    }
+
+    public record RoleCount(String role, int heroes) {}
+
+    /**
+     * Divisão do dano por tipo, em frações de 0 a 1. Ataque básico conta como físico; "outro" junta itens e
+     * habilidades sem tipo conhecido.
+     */
+    public record DamageShare(long total, double physical, double magical, double pure, double other) {
+
+        public static final DamageShare NONE = new DamageShare(0, 0, 0, 0, 0);
+    }
+
+    /**
+     * @param laneOpponent se o herói passou a fase de rotas na sua rota
+     * @param winRate taxa de vitória do seu herói contra ele
+     */
+    public record Matchup(String heroName, boolean laneOpponent, int games, double winRate) {}
+
+    /** Taxa de vitória média dos heróis de cada time numa faixa de duração, ou nulo sem amostra. */
+    public record PhasePower(String phase, Double yourTeam, Double enemyTeam) {}
 }

@@ -42,6 +42,14 @@ class MatchAnalysisMarkdownRendererTest {
         assertThat(md).contains("## Itens principais", "| Power Treads | 12:00 | 10,0 min |", "| Maelstrom | 18:00 | – |");
         assertThat(md).doesNotContain("Tango");
         assertThat(md).contains("Wards colocadas: 1 observer e 2 sentry.", "| 10 | +1000 |", "| 20 | 0 |");
+        assertThat(md).contains("## Contexto da partida", "### Draft", "| 1 | adversário | Axe |",
+                "| 3 | seu | **Sniper (você)** |", "Você foi o 2º pick do seu time.",
+                "| Heróis | Sniper, Ogre Magi | Axe |",
+                "| Dano causado em heróis | físico 45,5%, mágico 54,5%, puro 0,0% | físico 33,3%, mágico 0,0%, puro 66,7% |",
+                "Dano que você recebeu de heróis: físico 60,0%, mágico 0,0%, puro 40,0%.",
+                "| Axe (sua rota) | 47,0% | 1000 |",
+                "| 30 a 40 min | 45,0% | – |", "| 40 a 50 min | 40,0% | 60,0% |");
+        assertThat(md.indexOf("## Contexto da partida")).isLessThan(md.indexOf("## Fase de rotas"));
     }
 
     @Test
@@ -51,7 +59,9 @@ class MatchAnalysisMarkdownRendererTest {
         assertThat(md).contains("- **Posição principal (informada pelo jogador):** não informada",
                 "| | Nesta partida |\n|---|---:|", "Ainda não há Raio-X salvo desta conta",
                 "## Replay ainda não analisado");
-        assertThat(md).doesNotContain("Rota nesta partida", "## Mortes", "## Fase de rotas");
+        assertThat(md).doesNotContain("Rota nesta partida", "## Mortes", "## Fase de rotas", "Dano causado");
+        assertThat(md).as("draft, matchups e força por duração não dependem do replay")
+                .contains("## Contexto da partida", "| Axe | 47,0% | 1000 |");
     }
 
     @Test

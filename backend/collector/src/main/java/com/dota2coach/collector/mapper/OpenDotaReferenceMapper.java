@@ -1,24 +1,32 @@
 package com.dota2coach.collector.mapper;
 
+import com.dota2coach.collector.dto.opendota.OpenDotaAbilityConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaBenchmarksResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroDurationResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroMatchupResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
 import com.dota2coach.core.enums.BenchmarkMetric;
+import com.dota2coach.core.enums.DamageType;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.RankBracket;
 import com.dota2coach.core.model.Hero;
 import com.dota2coach.core.model.HeroBenchmark;
+import com.dota2coach.core.model.HeroDurations;
 import com.dota2coach.core.model.HeroItemPopularity;
-import com.dota2coach.core.model.HeroMeta;
+import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.HeroMeta.PickWin;
+import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.Item;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -101,5 +109,40 @@ public final class OpenDotaReferenceMapper {
             }
         }
         return new HeroBenchmark(heroId, byMetric);
+    }
+
+    /** Tipo de dano de cada habilidade. Quando a OpenDota manda uma lista, vale o primeiro tipo. */
+    public static Map<String, DamageType> toDamageTypes(Map<String, OpenDotaAbilityConstant> abilities) {
+        Map<String, DamageType> types = new HashMap<>();
+        abilities.forEach((key, ability) -> {
+            if (key == null || ability == null) {
+                return;
+            }
+            Object raw = ability.damageType();
+            if (raw instanceof List<?> list) {
+                raw = list.isEmpty() ? null : list.get(0);
+            }
+            DamageType type = DamageType.fromOpenDota(raw == null ? null : raw.toString());
+            if (type != DamageType.OTHER) {
+                types.put(key, type);
+            }
+        });
+        return types;
+    }
+
+    public static HeroDurations toHeroDurations(int heroId, List<OpenDotaHeroDurationResponse> durations) {
+        return new HeroDurations(heroId, durations.stream()
+                .filter(d -> d != null && d.durationBin() != null && d.gamesPlayed() != null && d.wins() != null)
+                .map(d -> new HeroDurations.Bin(d.durationBin(), d.gamesPlayed(), d.wins()))
+                .sorted(Comparator.comparingInt(HeroDurations.Bin::fromSeconds))
+                .toList());
+    }
+
+    public static HeroMatchups toHeroMatchups(int heroId, List<OpenDotaHeroMatchupResponse> matchups) {
+        Map<Integer, HeroMatchups.Record> against = new HashMap<>();
+        matchups.stream()
+                .filter(m -> m != null && m.heroId() != null && m.gamesPlayed() != null && m.wins() != null)
+                .forEach(m -> against.put(m.heroId(), new HeroMatchups.Record(m.gamesPlayed(), m.wins())));
+        return new HeroMatchups(heroId, against);
     }
 }

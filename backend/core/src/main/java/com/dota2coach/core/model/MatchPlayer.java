@@ -15,6 +15,9 @@ import java.util.Map;
  * @param laneEfficiencyPct eficiência na fase de rotas calculada pela OpenDota (0 a 100), ou nulo
  * @param benchmarkPercentiles percentil (0 a 1) entre as partidas públicas do herói, por métrica
  * @param lastHitsAt10Percentile percentil dos last hits aos 10 minutos, ou nulo
+ * @param damageDealtBySource dano causado em heróis por origem: habilidade ou item pelo nome interno, ou
+ *     {@link #BASIC_ATTACK}
+ * @param damageReceivedBySource dano recebido de heróis, pela mesma origem
  */
 public record MatchPlayer(
         int slot,
@@ -46,7 +49,12 @@ public record MatchPlayer(
         int sentriesPlaced,
         Integer laneEfficiencyPct,
         Map<BenchmarkMetric, Double> benchmarkPercentiles,
-        Double lastHitsAt10Percentile) {
+        Double lastHitsAt10Percentile,
+        Map<String, Long> damageDealtBySource,
+        Map<String, Long> damageReceivedBySource) {
+
+    /** Origem do dano de ataque básico (a OpenDota usa "null"). */
+    public static final String BASIC_ATTACK = "null";
 
     public MatchPlayer {
         lastHitsByMinute = List.copyOf(lastHitsByMinute);
@@ -57,6 +65,8 @@ public record MatchPlayer(
         deathLog = List.copyOf(deathLog);
         killLog = List.copyOf(killLog);
         benchmarkPercentiles = Map.copyOf(benchmarkPercentiles);
+        damageDealtBySource = Map.copyOf(damageDealtBySource);
+        damageReceivedBySource = Map.copyOf(damageReceivedBySource);
     }
 
     /** Valor da série no minuto, ou nulo se a partida acabou antes ou a série não existe. */

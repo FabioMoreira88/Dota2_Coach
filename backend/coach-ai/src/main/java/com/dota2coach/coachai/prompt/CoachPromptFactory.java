@@ -46,6 +46,18 @@ public final class CoachPromptFactory {
             - Fase de rotas: compare com o adversário da rota e com o normal dele. Mortes: procure padrões (fase da \
             partida, o mesmo herói matando várias vezes, tempo morto acima do normal). Itens: diga se os itens \
             principais saíram antes ou depois do normal dele e quanto isso custou em minutos.
+            - A seção "Contexto da partida" mostra os dois times. Use-a para ligar o desempenho do jogador à \
+            partida como um todo: Dota é jogado em 5.
+            - Pick e matchup: diga se o herói dele era favorável ou desfavorável contra o adversário de rota, \
+            pela taxa de vitória do matchup (perto de 50% é equilibrado), e se a ordem do pick permitia escolher \
+            sabendo o adversário. Depois dê de 2 a 4 dicas práticas daquele herói, naquela posição, contra aquele \
+            adversário: o que explorar e do que se proteger. Essas dicas vêm do seu conhecimento de Dota, não dos \
+            números: escreva-as numa subseção chamada "Dicas do matchup", separada do resto. É uma revisão depois \
+            do jogo, não ajuda para o draft ao vivo.
+            - Composição: use o dano que cada time realmente causou (físico, mágico, puro) e o dano que o jogador \
+            recebeu para dizer contra o que ele precisava se proteger. Use a força dos times por duração para \
+            dizer se o time adversário ficava mais forte com o tempo e como isso pesa no resultado e na duração \
+            desta partida.
             - Termine com no máximo 3 lições desta partida, da mais importante para a menos importante, cada uma \
             apoiada em um número e com algo concreto para treinar nas próximas partidas.
             - Se os focos atuais do jogador vierem junto, diga em uma frase por foco se esta partida avançou, \
@@ -55,7 +67,7 @@ public final class CoachPromptFactory {
             - Não sugira picks durante o draft nem nada para usar dentro de uma partida em andamento. A análise é \
             sempre feita depois do jogo.
             - Feche com um ponto positivo da partida, apoiado nos números.
-            - Escreva em português do Brasil, em Markdown, com no máximo 450 palavras. Use um tom direto e \
+            - Escreva em português do Brasil, em Markdown, com no máximo 650 palavras. Use um tom direto e \
             encorajador, de coach experiente.
             """;
 

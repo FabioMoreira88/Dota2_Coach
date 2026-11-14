@@ -4,6 +4,8 @@ import static com.dota2coach.analysis.support.Matches.ACCOUNT;
 import static com.dota2coach.analysis.support.Matches.sniperMid;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.within;
 
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathPhaseLine;
@@ -51,6 +53,40 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.usual().lastHitsAt10()).isEqualTo(41.0);
         assertThat(a.usual().lastHitsAt10ForHero()).isTrue();
         assertThat(a.usual().heroGoldPerMin()).isEqualTo(500.0);
+    }
+
+    @Test
+    void contextoComDraftDanoMatchupsEForcaPorDuracao() {
+        MatchAnalysis.Context c = calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).context();
+
+        assertThat(c.pickOrderKnown()).isTrue();
+        assertThat(c.picks()).containsExactly(new MatchAnalysis.Pick(1, "Axe", false, false),
+                new MatchAnalysis.Pick(2, "Ogre Magi", true, false), new MatchAnalysis.Pick(3, "Sniper", true, true));
+        assertThat(c.yourTeamPickNumber()).isEqualTo(2);
+
+        MatchAnalysis.TeamProfile yours = c.teams().get(0);
+        assertThat(yours.yours()).isTrue();
+        assertThat(yours.won()).isFalse();
+        assertThat(yours.heroes()).containsExactly("Sniper", "Ogre Magi");
+        assertThat(yours.damageDealt().total()).isEqualTo(33000);
+        assertThat(yours.damageDealt().physical()).isCloseTo(15000 / 33000.0, within(1e-9));
+        assertThat(yours.damageDealt().magical()).isCloseTo(18000 / 33000.0, within(1e-9));
+        assertThat(yours.roles()).extracting(MatchAnalysis.RoleCount::role, MatchAnalysis.RoleCount::heroes)
+                .contains(tuple("Carry", 1), tuple("Dano mágico em rajada (nuker)", 2), tuple("Suporte", 1));
+        MatchAnalysis.TeamProfile enemy = c.teams().get(1);
+        assertThat(enemy.won()).isTrue();
+        assertThat(enemy.damageDealt().pure()).isCloseTo(2 / 3.0, within(1e-9));
+        assertThat(c.damageReceivedByYou().physical()).isCloseTo(0.6, within(1e-9));
+        assertThat(c.damageReceivedByYou().pure()).isCloseTo(0.4, within(1e-9));
+
+        assertThat(c.matchups()).as("Ogre não é adversário; poucas partidas também ficariam de fora")
+                .containsExactly(new MatchAnalysis.Matchup("Axe", true, 1000, 0.47));
+
+        assertThat(c.power()).containsExactly(
+                new MatchAnalysis.PhasePower("até 20 min", 0.6, 0.4),
+                new MatchAnalysis.PhasePower("20 a 30 min", 0.5, 0.5),
+                new MatchAnalysis.PhasePower("30 a 40 min", 0.45, null),
+                new MatchAnalysis.PhasePower("40 a 50 min", 0.4, 0.6));
     }
 
     @Test
