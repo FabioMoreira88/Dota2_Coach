@@ -63,6 +63,11 @@ public final class CoachPromptFactory {
             ouro do time por minuto. Aponte em que momento a partida virou (a luta ou o objetivo que coincide \
             com a maior perda ou ganho), quem morreu nessa luta, se o jogador estava nela e se morreu, e o que \
             caiu logo depois (torres, barracks, Roshan). Diga em 2 a 4 frases, sem repetir as tabelas.
+            - Itens dos dois times: cruze os itens de cada time com o dano que o outro time causou e com as \
+            lutas. Aponte até 3 itens que fizeram diferença (por exemplo, um item defensivo que faltou contra um \
+            time de dano mágico, ou um item adversário que coincide com a virada) e o momento em que saíram. Um \
+            item popular que não foi feito só é problema se combina com o que a partida pedia: explique o porquê \
+            com o seu conhecimento de Dota. Fale primeiro dos itens do jogador, depois do time.
             - Termine com no máximo 3 lições desta partida, da mais importante para a menos importante, cada uma \
             apoiada em um número e com algo concreto para treinar nas próximas partidas.
             - Se os focos atuais do jogador vierem junto, diga em uma frase por foco se esta partida avançou, \

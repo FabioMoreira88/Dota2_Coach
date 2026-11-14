@@ -63,7 +63,8 @@ public final class Matches {
                 List.of(me, ally, rival), parsed ? objectives() : List.of(), parsed ? teamfights() : List.of());
         return new MatchSnapshot(match, Snapshots.heroes(), Snapshots.items(), damageTypes(), durations(),
                 new HeroMatchups(Snapshots.SNIPER, Map.of(Snapshots.AXE, new HeroMatchups.Record(1000, 470),
-                        Snapshots.OGRE, new HeroMatchups.Record(5, 5))));
+                        Snapshots.OGRE, new HeroMatchups.Record(5, 5))),
+                parsed ? Snapshots.popularity() : Map.of());
     }
 
     /** First blood do Dire, uma T1 de cada lado, Roshan do Dire e um barracks do Radiant caindo. */

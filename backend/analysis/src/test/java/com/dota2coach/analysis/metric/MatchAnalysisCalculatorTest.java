@@ -127,7 +127,7 @@ class MatchAnalysisCalculatorTest {
                 match.duration(), match.radiantWin(), match.gameMode(), match.ranked(), true,
                 match.radiantGoldAdvantage(), match.picks(), match.players(), match.objectives(), fights);
         var snapshot = new com.dota2coach.core.model.MatchSnapshot(withFights, base.heroes(), base.items(),
-                base.damageTypes(), base.heroDurations(), base.playerMatchups());
+                base.damageTypes(), base.heroDurations(), base.playerMatchups(), base.itemPopularity());
 
         MatchAnalysis.Timeline t = calculator.analyze(snapshot, ACCOUNT, null, null).timeline();
 
@@ -135,6 +135,24 @@ class MatchAnalysisCalculatorTest {
         assertThat(t.biggestFights()).extracting(MatchAnalysis.FightLine::goldSwing)
                 .as("as 5 maiores em valor absoluto, na ordem em que aconteceram")
                 .containsExactly(200, -300, 400, -500, 600);
+    }
+
+    @Test
+    void itensDosDezJogadoresComOsPopularesQueNaoFez() {
+        List<MatchAnalysis.PlayerItems> items =
+                calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).playersItems();
+
+        assertThat(items).extracting(MatchAnalysis.PlayerItems::heroName)
+                .as("seu time primeiro, você no topo").containsExactly("Sniper", "Ogre Magi", "Axe");
+        MatchAnalysis.PlayerItems me = items.get(0);
+        assertThat(me.you()).isTrue();
+        assertThat(me.items()).containsExactly(new MatchAnalysis.ItemTime("Power Treads", 720),
+                new MatchAnalysis.ItemTime("Maelstrom", 1080));
+        assertThat(me.popularNotBuilt())
+                .as("Tango e Hyperstone não são itens principais; Treads e Maelstrom ele fez")
+                .containsExactly("Dragon Lance", "Black King Bar", "Desolator");
+        assertThat(items.get(2).yourTeam()).isFalse();
+        assertThat(items.get(2).popularKnown()).as("sem popularidade do Axe").isFalse();
     }
 
     @Test
@@ -159,6 +177,7 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.items()).isEmpty();
         assertThat(a.teamGold()).isEmpty();
         assertThat(a.timeline()).isEqualTo(MatchAnalysis.Timeline.EMPTY);
+        assertThat(a.playersItems()).isEmpty();
     }
 
     @Test

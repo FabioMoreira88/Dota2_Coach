@@ -56,6 +56,10 @@ class MatchDataServiceTest {
         expect("/heroes/74/durations", "hero-durations.json");
         expect("/heroes/1/durations", "hero-durations.json");
         expect("/heroes/14/matchups", "hero-matchups.json");
+        expect("/heroes/14/itemPopularity", "item-popularity.json");
+        expect("/heroes/2/itemPopularity", "item-popularity.json");
+        server.expect(requestTo(BASE + "/heroes/74/itemPopularity")).andRespond(withServerError());
+        expect("/heroes/1/itemPopularity", "item-popularity.json");
 
         MatchSnapshot snapshot = service.collect(MATCH, 34839344L).orElseThrow();
 
@@ -76,6 +80,7 @@ class MatchDataServiceTest {
         assertThat(snapshot.match().picks()).extracting(AnalyzedMatch.DraftPick::heroId)
                 .as("só picks, na ordem do draft").containsExactly(14, 2, 74, 1);
         assertThat(me.damageDealtBySource()).containsEntry(MatchPlayer.BASIC_ATTACK, 12000L);
+        assertThat(snapshot.itemPopularity()).as("herói 74 falhou e ficou de fora").containsOnlyKeys(14, 2, 1);
         server.verify();
     }
 

@@ -50,6 +50,10 @@ class MatchAnalysisMarkdownRendererTest {
                 "| Axe (sua rota) | 47,0% | 1000 |",
                 "| 30 a 40 min | 45,0% | – |", "| 40 a 50 min | 40,0% | 60,0% |");
         assertThat(md.indexOf("## Contexto da partida")).isLessThan(md.indexOf("## Fase de rotas"));
+        assertThat(md).contains("## Itens dos dois times",
+                "| seu | **Sniper (você)** | Power Treads 12:00, Maelstrom 18:00 | Dragon Lance, Black King Bar, "
+                        + "Desolator |",
+                "| seu | Ogre Magi | nenhum | – |", "| adversário | Axe | nenhum | – |");
         assertThat(md).contains("## Objetivos", "Torres derrubadas: seu time 1, adversário 1.",
                 "| 5:00 | Adversário | tirou o first blood |", "| 11:40 | Seu time | derrubou a torre T1 do meio |",
                 "| 38:20 | Adversário | derrubou o barracks à distância do meio |");
@@ -69,7 +73,7 @@ class MatchAnalysisMarkdownRendererTest {
                 "| | Nesta partida |\n|---|---:|", "Ainda não há Raio-X salvo desta conta",
                 "## Replay ainda não analisado");
         assertThat(md).doesNotContain("Rota nesta partida", "## Mortes", "## Fase de rotas", "Dano causado",
-                "## Objetivos", "## Lutas");
+                "## Objetivos", "## Lutas", "## Itens dos dois times");
         assertThat(md).as("draft, matchups e força por duração não dependem do replay")
                 .contains("## Contexto da partida", "| Axe | 47,0% | 1000 |");
     }

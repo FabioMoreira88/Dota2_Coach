@@ -11,6 +11,8 @@ import java.util.Map;
  * @param damageTypes tipo de dano de cada habilidade, pelo nome interno
  * @param heroDurations desempenho por duração dos heróis da partida, por id
  * @param playerMatchups desempenho do herói do jogador analisado contra cada herói, em partidas públicas
+ * @param itemPopularity itens mais comprados com cada herói da partida, por id do herói (vazio sem replay
+ *     analisado)
  */
 public record MatchSnapshot(
         AnalyzedMatch match,
@@ -18,13 +20,15 @@ public record MatchSnapshot(
         Map<Integer, Item> items,
         Map<String, DamageType> damageTypes,
         Map<Integer, HeroDurations> heroDurations,
-        HeroMatchups playerMatchups) {
+        HeroMatchups playerMatchups,
+        Map<Integer, HeroItemPopularity> itemPopularity) {
 
     public MatchSnapshot {
         heroes = Map.copyOf(heroes);
         items = Map.copyOf(items);
         damageTypes = Map.copyOf(damageTypes);
         heroDurations = Map.copyOf(heroDurations);
+        itemPopularity = Map.copyOf(itemPopularity);
     }
 
     public String heroName(Integer heroId) {

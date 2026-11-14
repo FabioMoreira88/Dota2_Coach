@@ -8,6 +8,7 @@ import com.dota2coach.core.enums.DamageType;
 import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.HeroDurations;
+import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchSnapshot;
@@ -52,7 +53,8 @@ public class MatchDataService {
                 OpenDotaReferenceMapper.toItems(openDotaClient.getItemConstants()),
                 damageTypes(),
                 heroDurations(m),
-                matchups(m, accountId)));
+                matchups(m, accountId),
+                itemPopularity(m)));
     }
 
     /** Matchups do herói do jogador. Se a conta não está na partida ou a OpenDota falha, sai vazio. */
@@ -92,6 +94,26 @@ public class MatchDataService {
             }
         }
         return durations;
+    }
+
+    /**
+     * Itens mais comprados com cada herói da partida. Só com replay analisado, porque sem ele não há compras para
+     * comparar. Um herói que falha fica de fora.
+     */
+    private Map<Integer, HeroItemPopularity> itemPopularity(AnalyzedMatch match) {
+        Map<Integer, HeroItemPopularity> popularity = new HashMap<>();
+        if (!match.replayParsed()) {
+            return popularity;
+        }
+        for (MatchPlayer player : match.players()) {
+            try {
+                popularity.put(player.heroId(), OpenDotaReferenceMapper.toItemPopularity(
+                        player.heroId(), openDotaClient.getItemPopularity(player.heroId())));
+            } catch (ExternalServiceUnavailableException e) {
+                log.warn("OpenDota: sem itens populares do herói {}: {}", player.heroId(), e.getMessage());
+            }
+        }
+        return popularity;
     }
 
     /** Pede à OpenDota a análise do replay. Os dados aparecem minutos depois. */
