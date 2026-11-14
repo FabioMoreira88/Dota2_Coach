@@ -12,6 +12,7 @@ import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.HeroMeta.PickWin;
 import com.dota2coach.core.model.Item;
+import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchRecord;
 import com.dota2coach.core.model.PlayerSummary;
 import com.dota2coach.core.model.ProfileSnapshot;
@@ -94,7 +95,13 @@ public final class Snapshots {
     }
 
     public static ProfileSnapshot snapshot(Integer rankTier, List<MatchRecord> matches) {
-        return new ProfileSnapshot(player(rankTier), matches, heroes(), items(), meta(), popularity(), benchmarks(), NOW);
+        return snapshot(rankTier, matches, Map.of());
+    }
+
+    public static ProfileSnapshot snapshot(
+            Integer rankTier, List<MatchRecord> matches, Map<Long, MatchDetail> details) {
+        return new ProfileSnapshot(
+                player(rankTier), matches, heroes(), items(), meta(), popularity(), benchmarks(), details, NOW);
     }
 
     /** Partida padrão de 40 minutos, {@code daysAgo} dias antes de {@link #NOW}. */

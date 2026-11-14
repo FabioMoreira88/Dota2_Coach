@@ -6,6 +6,7 @@ import com.dota2coach.collector.mapper.OpenDotaReferenceMapper;
 import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroItemPopularity;
+import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchRecord;
 import com.dota2coach.core.model.PlayerSummary;
 import com.dota2coach.core.model.ProfileSnapshot;
@@ -30,6 +31,8 @@ public class ProfileSnapshotService {
     static final int RECENT_MATCHES = 100;
     /** Para quantos desses heróis buscar popularidade de itens e percentis (duas chamadas por herói). */
     static final int ITEM_POPULARITY_HEROES = 10;
+    /** Quantas partidas recentes com replay analisado detalhar (uma chamada grande por partida). */
+    static final int DETAILED_MATCHES = 20;
     /** A Valve mantém os replays por cerca de duas semanas; depois disso a OpenDota não consegue analisar. */
     static final Duration REPLAY_AVAILABILITY = Duration.ofDays(14);
 
@@ -45,7 +48,8 @@ public class ProfileSnapshotService {
 
     /**
      * Coleta perfil, partidas, heróis, itens, meta por faixa e itens populares dos heróis mais jogados
-     * recentemente. Faz cerca de 25 chamadas à OpenDota.
+     * recentemente, mais os detalhes de até {@link #DETAILED_MATCHES} partidas recentes analisadas. Faz cerca de
+     * 45 chamadas à OpenDota.
      */
     public ProfileSnapshot collect(long accountId) {
         PlayerSummary player = playerDataService.getSummary(accountId);
@@ -61,8 +65,8 @@ public class ProfileSnapshotService {
         Map<Integer, HeroBenchmark> benchmarks = topHeroes.stream()
                 .map(heroId -> OpenDotaReferenceMapper.toHeroBenchmark(heroId, openDotaClient.getBenchmarks(heroId)))
                 .collect(Collectors.toMap(HeroBenchmark::heroId, Function.identity()));
-        return new ProfileSnapshot(
-                player, matches, heroes, items, heroMeta, itemPopularity, benchmarks, Instant.now(clock));
+        return new ProfileSnapshot(player, matches, heroes, items, heroMeta, itemPopularity, benchmarks,
+                matchDetails(matches), Instant.now(clock));
     }
 
     /**
@@ -91,6 +95,24 @@ public class ProfileSnapshotService {
             }
         }
         return requested;
+    }
+
+    /** Detalhes das partidas recentes com replay analisado. Uma partida que falha fica de fora. */
+    Map<Long, MatchDetail> matchDetails(List<MatchRecord> matches) {
+        Map<Long, MatchDetail> details = new LinkedHashMap<>();
+        matches.stream()
+                .limit(RECENT_MATCHES)
+                .filter(MatchRecord::parsed)
+                .limit(DETAILED_MATCHES)
+                .forEach(match -> {
+                    try {
+                        OpenDotaMatchMapper.toMatchDetail(openDotaClient.getMatch(match.matchId()), match.heroId())
+                                .ifPresent(detail -> details.put(match.matchId(), detail));
+                    } catch (ExternalServiceUnavailableException e) {
+                        log.warn("Não foi possível detalhar a partida {}: {}", match.matchId(), e.getMessage());
+                    }
+                });
+        return details;
     }
 
     /** Heróis mais jogados nas partidas recentes, do mais jogado para o menos. */

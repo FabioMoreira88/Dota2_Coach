@@ -6,6 +6,7 @@ import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaParseRequestResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaPlayerHeroResponse;
@@ -111,6 +112,12 @@ public class OpenDotaClient {
     public OpenDotaItemPopularityResponse getItemPopularity(int heroId) {
         return get(uri -> uri.path("/heroes/{id}/itemPopularity").build(heroId),
                 new ParameterizedTypeReference<OpenDotaItemPopularityResponse>() {});
+    }
+
+    /** Detalhes de uma partida. Com replay analisado a resposta é grande (alguns MB). */
+    public OpenDotaMatchDetailResponse getMatch(long matchId) {
+        return get(uri -> uri.path("/matches/{id}").build(matchId),
+                new ParameterizedTypeReference<OpenDotaMatchDetailResponse>() {});
     }
 
     /** Percentis de ouro, XP, last hits, dano e mortes por minuto do herói em partidas públicas recentes. */

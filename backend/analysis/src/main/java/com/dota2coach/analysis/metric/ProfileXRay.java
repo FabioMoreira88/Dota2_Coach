@@ -31,6 +31,7 @@ public record ProfileXRay(
         Fundamentals fundamentals,
         List<HeroBenchmarkLine> benchmarks,
         List<HeroItems> items,
+        MatchDetails details,
         double shareOnWinningMetaHeroes) {
 
     public ProfileXRay {
@@ -95,6 +96,49 @@ public record ProfileXRay(
      *     da faixa publicada (abaixo de 10% ou acima de 99%)
      */
     public record MetricComparison(double playerValue, double percentile) {}
+
+    /**
+     * Números das partidas recentes com replay analisado.
+     *
+     * @param analyzedMatches partidas detalhadas
+     * @param lastHitsAt10 média de last hits aos 10 minutos, ou nulo sem partidas que passaram dos 10 minutos
+     * @param deniesAt10 média de denies aos 10 minutos, ou nulo
+     * @param deathsByPhase mortes por fase da partida
+     * @param secondsDeadPerMatch tempo morto médio por partida
+     * @param itemTimings minuto da primeira compra dos itens principais, por herói
+     */
+    public record MatchDetails(
+            int analyzedMatches,
+            Double lastHitsAt10,
+            Double deniesAt10,
+            List<HeroLaning> laningByHero,
+            List<DeathPhase> deathsByPhase,
+            double secondsDeadPerMatch,
+            List<ItemTiming> itemTimings) {
+
+        public static final MatchDetails EMPTY = new MatchDetails(0, null, null, List.of(), List.of(), 0, List.of());
+
+        public MatchDetails {
+            laningByHero = List.copyOf(laningByHero);
+            deathsByPhase = List.copyOf(deathsByPhase);
+            itemTimings = List.copyOf(itemTimings);
+        }
+    }
+
+    public record HeroLaning(String heroName, int matches, double lastHitsAt10) {}
+
+    /**
+     * @param label fase, ex.: "0 a 10 min"
+     * @param deathsPerMatch mortes na fase divididas pelas partidas analisadas
+     * @param share fração de todas as mortes que aconteceu nessa fase
+     */
+    public record DeathPhase(String label, double deathsPerMatch, double share) {}
+
+    /**
+     * @param matches partidas do herói em que o item foi comprado
+     * @param medianMinute mediana do minuto da primeira compra
+     */
+    public record ItemTiming(String heroName, String itemName, int matches, double medianMinute) {}
 
     /** Médias das últimas partidas comparadas com as anteriores do recorte recente. */
     public record Fundamentals(StatBlock latest, StatBlock previous) {}

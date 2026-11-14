@@ -91,6 +91,7 @@ public class XRayCalculator {
                 fundamentals(recent),
                 benchmarks(snapshot, recent, heroes),
                 items(snapshot, all, heroes),
+                MatchDetailsCalculator.calculate(snapshot, recent),
                 shareOnWinningMetaHeroes(recent, meta));
     }
 

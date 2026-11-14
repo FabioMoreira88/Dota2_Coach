@@ -74,6 +74,8 @@ class ProfileSnapshotServiceTest {
         respond("/heroes/84/itemPopularity", "item-popularity.json");
         respond("/benchmarks?hero_id=35", "benchmarks.json");
         respond("/benchmarks?hero_id=84", "benchmarks.json");
+        respond("/matches/9083198111", "match-detail.json");
+        respond("/matches/9080000000", "match-detail.json");
 
         ProfileSnapshot snapshot = service.collect(ACCOUNT);
 
@@ -92,6 +94,9 @@ class ProfileSnapshotServiceTest {
                 .containsOnlyKeys(BenchmarkMetric.GOLD_PER_MIN, BenchmarkMetric.XP_PER_MIN,
                         BenchmarkMetric.LAST_HITS_PER_MIN, BenchmarkMetric.DEATHS_PER_MIN);
         assertThat(snapshot.benchmarks().get(35).byMetric().get(BenchmarkMetric.DEATHS_PER_MIN)).hasSize(1);
+        assertThat(snapshot.matchDetails()).as("na segunda partida o Sniper não tem replay analisado")
+                .containsOnlyKeys(9083198111L);
+        assertThat(snapshot.matchDetails().get(9083198111L).lastHitsAt10()).isEqualTo(12);
         assertThat(snapshot.collectedAt()).isEqualTo(NOW);
         server.verify();
     }

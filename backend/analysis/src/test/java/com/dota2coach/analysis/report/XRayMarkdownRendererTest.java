@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.dota2coach.analysis.metric.XRayCalculator;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
+import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchRecord;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -47,13 +48,33 @@ class XRayMarkdownRendererTest {
     }
 
     @Test
+    void secaoDePartidasAnalisadas() {
+        List<MatchRecord> matches = new ArrayList<>();
+        java.util.Map<Long, MatchDetail> details = new java.util.HashMap<>();
+        for (int i = 0; i < 3; i++) {
+            matches.add(match(i + 1, SNIPER, true, i));
+            details.put(i + 1L, new MatchDetail(i + 1, SNIPER, 40 + i, 2,
+                    List.of(new MatchDetail.Purchase("power_treads", 600)),
+                    List.of(new MatchDetail.Death(300, 30))));
+        }
+
+        String md = renderer.render(new XRayCalculator().calculate(snapshot(53, matches, details)));
+
+        assertThat(md).contains("## Partidas com replay analisado", "Detalhes de 3 partidas recentes",
+                "- **Last hits aos 10 min:** 41,0 em média", "| Sniper | 3 | 41,0 |",
+                "Tempo morto: 0,5 min por partida", "| 0 a 10 min | 1,0 | 100,0% |",
+                "| Sniper | Power Treads | 3 | 10,0 |");
+    }
+
+    @Test
     void perfilVazioNaoQuebra() {
         String md = renderer.render(new XRayCalculator().calculate(snapshot(null, List.of())));
 
         assertThat(md).contains("- **Medalha:** sem medalha",
                 "- **Posição principal (informada pelo jogador):** não informada", "_Sem partidas no recorte._",
                 "em todas as faixas (você está sem medalha)",
-                "_Sem dados de comparação para os heróis mais jogados._");
+                "_Sem dados de comparação para os heróis mais jogados._",
+                "_Nenhuma partida recente com replay analisado.");
     }
 
     @Test
