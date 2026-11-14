@@ -42,6 +42,7 @@ public final class CoachPromptFactory {
             - A posição principal (1 a 5) foi informada pelo jogador. Se a rota desta partida não combina com essa \
             posição (por exemplo, ele jogou de suporte), avalie pelo papel que ele fez nesta partida e diga isso.
             - Abra com 2 ou 3 frases sobre o que os números dizem desta partida, do ponto de vista dele.
+            - Nos percentis da partida, p50 é a mediana do herói, e em mortes percentil alto é ruim.
             - Fase de rotas: compare com o adversário da rota e com o normal dele. Mortes: procure padrões (fase da \
             partida, o mesmo herói matando várias vezes, tempo morto acima do normal). Itens: diga se os itens \
             principais saíram antes ou depois do normal dele e quanto isso custou em minutos.

@@ -30,7 +30,7 @@ class MatchAnalysisMarkdownRendererTest {
         assertThat(md).contains("| | Nesta partida | Seu normal com o herói (3 partidas recentes) |",
                 "| Abates / mortes / assistências | 8 / 3 / 6 | – |", "| KDA | 4,7 | 4,0 |",
                 "| Ouro/min | 560 | 500 |", "| Participação nos abates do time | 70,0% | – |");
-        assertThat(md).contains("## Comparação com outros jogadores do herói", "| Ouro/min | p66 |",
+        assertThat(md).contains("## Comparação com outros jogadores do herói", "| Ouro/min | p66 |", "Em mortes, percentil alto é ruim",
                 "| Last hits aos 10 min | p40 |");
         assertThat(md).contains("## Fase de rotas (10 minutos)", "| **Sniper (você)** | 40 | 10 | 3000 | 3200 |",
                 "| Axe (adversário) | 50 | 0 | 3500 | 3400 |", "Eficiência na fase de rotas (OpenDota): 72%.",
