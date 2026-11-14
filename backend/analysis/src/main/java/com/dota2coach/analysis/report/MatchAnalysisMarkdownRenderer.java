@@ -118,7 +118,8 @@ public class MatchAnalysisMarkdownRenderer {
         }
         md.append("## Comparação com outros jogadores do herói\n\n");
         md.append("Percentil entre as partidas públicas recentes do herói, calculado pela OpenDota: p50 é a ")
-                .append("mediana, p90 quer dizer melhor que 90% das partidas.\n\n");
+                .append("mediana, p90 quer dizer acima de 90% das partidas. Em mortes, percentil alto é ruim: ")
+                .append("quer dizer que morreu mais que a maioria.\n\n");
         md.append("| Métrica | Percentil |\n|---|---:|\n");
         for (BenchmarkMetric metric : BenchmarkMetric.values()) {
             Double value = a.percentiles().get(metric);
