@@ -4,10 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Side;
+import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.MatchDetail;
+import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchRecord;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,5 +116,57 @@ class OpenDotaMatchMapperTest {
         assertThat(ogre.deaths()).containsExactly(new MatchDetail.Death(300, 12), new MatchDetail.Death(1500, 40));
         assertThat(OpenDotaMatchMapper.toMatchDetail(detail, 35)).as("sem lh_t: replay não analisado").isEmpty();
         assertThat(OpenDotaMatchMapper.toMatchDetail(detail, 1)).as("herói fora da partida").isEmpty();
+    }
+
+    private static final java.util.Map<String, Integer> HERO_IDS = java.util.Map.of(
+            "npc_dota_hero_pudge", 14, "npc_dota_hero_invoker", 74, "npc_dota_hero_antimage", 1,
+            "npc_dota_hero_axe", 2);
+
+    private static AnalyzedMatch fullMatch() throws IOException {
+        OpenDotaMatchDetailResponse detail = new ObjectMapper().readValue(
+                new org.springframework.core.io.ClassPathResource("opendota/match-full.json").getInputStream(),
+                OpenDotaMatchDetailResponse.class);
+        return OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS).orElseThrow();
+    }
+
+    @Test
+    void converteAPartidaInteiraComOsDezJogadores() throws IOException {
+        AnalyzedMatch match = fullMatch();
+
+        assertThat(match.replayParsed()).isTrue();
+        assertThat(match.ranked()).isTrue();
+        assertThat(match.radiantWin()).isFalse();
+        assertThat(match.duration()).isEqualTo(Duration.ofMinutes(40));
+        assertThat(match.players()).hasSize(4);
+        MatchPlayer me = match.player(34839344L).orElseThrow();
+        assertThat(me.heroId()).isEqualTo(14);
+        assertThat(me.side()).isEqualTo(Side.RADIANT);
+        assertThat(me.lane()).isEqualTo(Lane.MID_LANE);
+        assertThat(me.physicalLane()).isEqualTo(2);
+        assertThat(MatchPlayer.atMinute(me.goldByMinute(), 10)).isEqualTo(3200);
+        assertThat(me.observersPlaced()).isEqualTo(1);
+        assertThat(me.sentriesPlaced()).isEqualTo(2);
+        assertThat(me.laneEfficiencyPct()).isEqualTo(78);
+        assertThat(me.benchmarkPercentiles()).containsEntry(BenchmarkMetric.GOLD_PER_MIN, 0.62)
+                .doesNotContainKey(BenchmarkMetric.DEATHS_PER_MIN);
+        assertThat(me.lastHitsAt10Percentile()).isEqualTo(0.45);
+        assertThat(me.killLog()).containsExactly(new MatchPlayer.Kill(700, 74));
+        assertThat(match.players().get(1).accountId()).isNull();
+    }
+
+    @Test
+    void identificaQuemMatouPeloDeathsLogOuPeloKillsLogDoAdversario() throws IOException {
+        MatchPlayer me = fullMatch().player(34839344L).orElseThrow();
+
+        assertThat(me.deathLog()).containsExactly(
+                new MatchPlayer.Death(300, 12, 74),
+                new MatchPlayer.Death(1500, 40, 1));
+    }
+
+    @Test
+    void partidaSemResultadoNaoViraAnalise() {
+        var detail = new OpenDotaMatchDetailResponse(1L, null, null, null, null, null, null, null, List.of());
+
+        assertThat(OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS)).isEmpty();
     }
 }
