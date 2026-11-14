@@ -64,8 +64,8 @@ class ProfileSnapshotServiceTest {
     @Test
     void coletaPerfilPartidasReferenciasEItensDosHeroisRecentes() {
         respond("/players/" + ACCOUNT, "player.json");
-        respond("/players/" + ACCOUNT + "/wl", "wl.json");
         respond("/players/" + ACCOUNT + "/heroes", "heroes.json");
+        respond("/players/" + ACCOUNT + "/wl", "wl.json");
         respond("/players/" + ACCOUNT + "/matches?", "matches.json");
         respond("/constants/heroes", "constants-heroes.json");
         respond("/constants/items", "constants-items.json");

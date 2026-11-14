@@ -3,6 +3,7 @@ package com.dota2coach.collector.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
@@ -40,10 +41,10 @@ class PlayerDataServiceTest {
     private void expectFullProfile() {
         server.expect(requestTo(BASE + "/players/" + ACCOUNT))
                 .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
-        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
-                .andRespond(withSuccess(new ClassPathResource("opendota/wl.json"), MediaType.APPLICATION_JSON));
         server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes"))
                 .andRespond(withSuccess(new ClassPathResource("opendota/heroes.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
+                .andRespond(withSuccess(new ClassPathResource("opendota/wl.json"), MediaType.APPLICATION_JSON));
     }
 
     @Test
@@ -82,11 +83,26 @@ class PlayerDataServiceTest {
     void semPartidasIndicaDadosPublicosDesligados() {
         server.expect(requestTo(BASE + "/players/" + ACCOUNT))
                 .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
-        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
-                .andRespond(withSuccess("{\"win\":0,\"lose\":0}", MediaType.APPLICATION_JSON));
         server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes"))
                 .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
+                .andRespond(withSuccess("{\"win\":0,\"lose\":0}", MediaType.APPLICATION_JSON));
 
         assertThat(service.getSummary(ACCOUNT).hasPublicMatchData()).isFalse();
+    }
+
+    @Test
+    void wlForaDoArUsaASomaDasPartidasPorHeroi() {
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT))
+                .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes"))
+                .andRespond(withSuccess(new ClassPathResource("opendota/heroes.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl")).andRespond(withServerError());
+
+        PlayerSummary summary = service.getSummary(ACCOUNT);
+
+        assertThat(summary.wins() + summary.losses()).isEqualTo(1998);
+        assertThat(summary.wins()).isEqualTo(1077);
+        server.verify();
     }
 }
