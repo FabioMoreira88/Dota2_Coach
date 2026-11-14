@@ -105,4 +105,51 @@ class PlayerDataServiceTest {
         assertThat(summary.wins()).isEqualTo(1077);
         server.verify();
     }
+
+    @Test
+    void heroesForaDoArSegueComOPerfilEOWl() {
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT))
+                .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes")).andRespond(withServerError());
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
+                .andRespond(withSuccess(new ClassPathResource("opendota/wl.json"), MediaType.APPLICATION_JSON));
+
+        PlayerSummary summary = service.getSummary(ACCOUNT);
+
+        assertThat(summary.personaName()).isEqualTo("Jogador Teste");
+        assertThat(summary.totalMatches()).isEqualTo(8824);
+        assertThat(summary.topHeroes()).isEmpty();
+        server.verify();
+    }
+
+    @Test
+    void heroesEWlForaDoArAindaDevolvemOPerfil() {
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT))
+                .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes")).andRespond(withServerError());
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl")).andRespond(withServerError());
+
+        PlayerSummary summary = service.getSummary(ACCOUNT);
+
+        assertThat(summary.personaName()).isEqualTo("Jogador Teste");
+        assertThat(summary.rankTier()).isEqualTo(53);
+        assertThat(summary.topHeroes()).isEmpty();
+        server.verify();
+    }
+
+    @Test
+    void resumoIncompletoNaoFicaNoCache() {
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT))
+                .andRespond(withSuccess(new ClassPathResource("opendota/player.json"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/heroes")).andRespond(withServerError());
+        server.expect(requestTo(BASE + "/players/" + ACCOUNT + "/wl"))
+                .andRespond(withSuccess(new ClassPathResource("opendota/wl.json"), MediaType.APPLICATION_JSON));
+        expectFullProfile();
+
+        service.getSummary(ACCOUNT);
+        PlayerSummary second = service.getSummary(ACCOUNT);
+
+        assertThat(second.topHeroes()).extracting("heroId").containsExactly(14, 35, 84);
+        server.verify();
+    }
 }
