@@ -7,6 +7,7 @@ import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.HeroDurations;
+import com.dota2coach.core.model.HeroItemTimings;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchPlayer;
@@ -65,7 +66,7 @@ public final class Matches {
         return new MatchSnapshot(match, Snapshots.heroes(), Snapshots.items(), damageTypes(), durations(),
                 new HeroMatchups(Snapshots.SNIPER, Map.of(Snapshots.AXE, new HeroMatchups.Record(1000, 470),
                         Snapshots.OGRE, new HeroMatchups.Record(5, 5))),
-                parsed ? Snapshots.popularity() : Map.of());
+                parsed ? Snapshots.popularity() : Map.of(), parsed ? itemTimings() : Map.of());
     }
 
     /** First blood do Dire, uma T1 de cada lado, Roshan do Dire e um barracks do Radiant caindo. */
@@ -99,6 +100,19 @@ public final class Matches {
                         new AnalyzedMatch.FightPlayer(Snapshots.SNIPER, Side.RADIANT, 0, 0, 0, 0, 0),
                         new AnalyzedMatch.FightPlayer(Snapshots.OGRE, Side.RADIANT, 1, -100, 100, 0, 0),
                         new AnalyzedMatch.FightPlayer(Snapshots.AXE, Side.DIRE, 1, 100, 600, 0, 0))));
+    }
+
+    /**
+     * Sniper costuma fazer Power Treads entre 10 e 12 min e Maelstrom entre 12 e 15 min. Sem dados do Axe nem da
+     * Hurricane Pike.
+     */
+    static Map<Integer, HeroItemTimings> itemTimings() {
+        return Map.of(Snapshots.SNIPER, new HeroItemTimings(Snapshots.SNIPER, Map.of(
+                "power_treads", List.of(new HeroItemTimings.Bin(600, 100, 50), new HeroItemTimings.Bin(720, 200, 110)),
+                "maelstrom", List.of(new HeroItemTimings.Bin(450, 12, 9), new HeroItemTimings.Bin(600, 37, 20),
+                        new HeroItemTimings.Bin(720, 97, 55), new HeroItemTimings.Bin(900, 286, 147),
+                        new HeroItemTimings.Bin(1200, 186, 93), new HeroItemTimings.Bin(1500, 58, 28),
+                        new HeroItemTimings.Bin(1800, 22, 8)))));
     }
 
     static Map<String, DamageType> damageTypes() {

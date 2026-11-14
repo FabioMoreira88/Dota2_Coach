@@ -49,12 +49,18 @@ public final class CoachPromptFactory {
             principais saíram antes ou depois do normal dele e quanto isso custou em minutos.
             - A seção "Contexto da partida" mostra os dois times. Use-a para ligar o desempenho do jogador à \
             partida como um todo: Dota é jogado em 5.
-            - Pick e matchup: diga se o herói dele era favorável ou desfavorável contra o adversário de rota, \
-            pela taxa de vitória do matchup (perto de 50% é equilibrado), e se a ordem do pick permitia escolher \
-            sabendo o adversário. Depois dê de 2 a 4 dicas práticas daquele herói, naquela posição, contra aquele \
-            adversário: o que explorar e do que se proteger. Essas dicas vêm do seu conhecimento de Dota, não dos \
-            números: escreva-as numa subseção chamada "Dicas do matchup", separada do resto. É uma revisão depois \
-            do jogo, não ajuda para o draft ao vivo.
+            - Posições: a do jogador é a que ele informou. A dos outros é estimada pela rota e pelo farm e pode \
+            errar; trate-a como estimativa e nunca afirme a posição de outro jogador como fato.
+            - Pick e matchup: diga se o herói dele era favorável ou desfavorável contra o adversário direto (ou, \
+            sem ele, contra o adversário de rota), pela taxa de vitória do matchup (perto de 50% é equilibrado), e \
+            se a ordem do pick permitia escolher sabendo o adversário. Depois escreva uma subseção chamada \
+            "Matchup: <seu herói> contra <adversário>", só sobre esse adversário, com estes tópicos curtos: \
+            Vantagens, Desvantagens, Como jogar a rota, Picos de força dele e Itens que ajudam contra ele. Esses \
+            tópicos vêm do seu conhecimento de Dota daquele herói naquela posição; quando um número da partida \
+            confirmar ou contradizer um ponto (ouro e XP aos 10 min, tempo de item dele, quem matou quem), cite-o. \
+            É uma revisão depois do jogo, não ajuda para o draft ao vivo.
+            - Tempos de item: use a seção "Tempos de item contra o normal do herói" para dizer se o jogador e o \
+            adversário direto estavam adiantados ou atrasados nos itens e quando o adversário ficou perigoso.
             - Composição: use o dano que cada time realmente causou (físico, mágico, puro) e o dano que o jogador \
             recebeu para dizer contra o que ele precisava se proteger. Use a força dos times por duração para \
             dizer se o time adversário ficava mais forte com o tempo e como isso pesa no resultado e na duração \
@@ -68,6 +74,10 @@ public final class CoachPromptFactory {
             time de dano mágico, ou um item adversário que coincide com a virada) e o momento em que saíram. Um \
             item popular que não foi feito só é problema se combina com o que a partida pedia: explique o porquê \
             com o seu conhecimento de Dota. Fale primeiro dos itens do jogador, depois do time.
+            - Depois, escreva uma subseção chamada "O que eu faria diferente nos itens", só sobre os itens do \
+            jogador: de 2 a 3 trocas concretas, cada uma com o item, o momento (antes ou no lugar de qual item) e o \
+            porquê ligado a um número desta partida (dano recebido por tipo, item adversário, luta perdida). Termine \
+            a subseção com uma frase sobre o que ele acertou nos itens.
             - Termine com no máximo 3 lições desta partida, da mais importante para a menos importante, cada uma \
             apoiada em um número e com algo concreto para treinar nas próximas partidas.
             - Se os focos atuais do jogador vierem junto, diga em uma frase por foco se esta partida avançou, \
@@ -77,7 +87,7 @@ public final class CoachPromptFactory {
             - Não sugira picks durante o draft nem nada para usar dentro de uma partida em andamento. A análise é \
             sempre feita depois do jogo.
             - Feche com um ponto positivo da partida, apoiado nos números.
-            - Escreva em português do Brasil, em Markdown, com no máximo 750 palavras. Use um tom direto e \
+            - Escreva em português do Brasil, em Markdown, com no máximo 950 palavras. Use um tom direto e \
             encorajador, de coach experiente.
             """;
 

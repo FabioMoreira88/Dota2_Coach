@@ -64,8 +64,13 @@ class MatchAnalysisCalculatorTest {
         MatchAnalysis.Context c = calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).context();
 
         assertThat(c.pickOrderKnown()).isTrue();
-        assertThat(c.picks()).containsExactly(new MatchAnalysis.Pick(1, "Axe", false, false),
-                new MatchAnalysis.Pick(2, "Ogre Magi", true, false), new MatchAnalysis.Pick(3, "Sniper", true, true));
+        assertThat(c.picks()).as("a sua posição é a informada; a dos outros, estimada pela rota e pelo farm")
+                .containsExactly(
+                        new MatchAnalysis.Pick(1, "Axe", false, false, 2, "meio, maior patrimônio do time", false),
+                        new MatchAnalysis.Pick(2, "Ogre Magi", true, false, 1,
+                                "rota segura, menor patrimônio do time", true),
+                        new MatchAnalysis.Pick(3, "Sniper", true, true, 2, null, false));
+        assertThat(c.directOpponent()).isEqualTo("Axe");
         assertThat(c.yourTeamPickNumber()).isEqualTo(2);
 
         MatchAnalysis.TeamProfile yours = c.teams().get(0);
@@ -84,7 +89,7 @@ class MatchAnalysisCalculatorTest {
         assertThat(c.damageReceivedByYou().pure()).isCloseTo(0.4, within(1e-9));
 
         assertThat(c.matchups()).as("Ogre não é adversário; poucas partidas também ficariam de fora")
-                .containsExactly(new MatchAnalysis.Matchup("Axe", true, 1000, 0.47));
+                .containsExactly(new MatchAnalysis.Matchup("Axe", true, true, 1000, 0.47));
 
         assertThat(c.power()).containsExactly(
                 new MatchAnalysis.PhasePower("até 20 min", 0.6, 0.4),
@@ -130,7 +135,8 @@ class MatchAnalysisCalculatorTest {
                 match.duration(), match.radiantWin(), match.gameMode(), match.ranked(), true,
                 match.radiantGoldAdvantage(), match.picks(), match.players(), match.objectives(), fights);
         var snapshot = new com.dota2coach.core.model.MatchSnapshot(withFights, base.heroes(), base.items(),
-                base.damageTypes(), base.heroDurations(), base.playerMatchups(), base.itemPopularity());
+                base.damageTypes(), base.heroDurations(), base.playerMatchups(), base.itemPopularity(),
+                base.itemTimings());
 
         MatchAnalysis.Timeline t = calculator.analyze(snapshot, ACCOUNT, null, null).timeline();
 
@@ -173,6 +179,41 @@ class MatchAnalysisCalculatorTest {
     }
 
     @Test
+    void semPosicaoInformadaNaoHaAdversarioDiretoNemPosicaoSua() {
+        MatchAnalysis.Context c = calculator.analyze(sniperMid(true), ACCOUNT, null, null).context();
+
+        assertThat(c.directOpponent()).isNull();
+        assertThat(c.picks().get(2).position()).as("a posição do jogador nunca é estimada").isNull();
+        assertThat(c.picks().get(0).position()).isEqualTo(2);
+    }
+
+    @Test
+    void temposDeItemContraONormalDoHeroi() {
+        List<MatchAnalysis.ItemTimingLine> lines =
+                calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).itemTimings();
+
+        assertThat(lines).as("sem dados do Axe nem da Hurricane Pike").containsExactly(
+                new MatchAnalysis.ItemTimingLine("Sniper", true, "Power Treads", 720, "10 a 12 min", "no normal",
+                        110 / 200.0),
+                new MatchAnalysis.ItemTimingLine("Sniper", true, "Maelstrom", 1080, "12 a 15 min",
+                        "depois do normal", 93 / 186.0));
+    }
+
+    @Test
+    void faixaDeTempoAntesDaPrimeiraEDepoisDaUltima() {
+        var bins = List.of(new com.dota2coach.core.model.HeroItemTimings.Bin(450, 100, 60),
+                new com.dota2coach.core.model.HeroItemTimings.Bin(600, 10, 5));
+
+        assertThat(MatchItemTimingCalculator.line("Sniper", true, "Blink", 300, bins))
+                .isEqualTo(new MatchAnalysis.ItemTimingLine("Sniper", true, "Blink", 300, "até 7,5 min", "no normal",
+                        0.6));
+        assertThat(MatchItemTimingCalculator.line("Sniper", true, "Blink", 2000, bins))
+                .as("depois da última faixa não há taxa de vitória")
+                .isEqualTo(new MatchAnalysis.ItemTimingLine("Sniper", true, "Blink", 2000, "até 7,5 min",
+                        "depois do normal", null));
+    }
+
+    @Test
     void semRaioXSalvoNaoComparaComOPadrao() {
         MatchAnalysis a = calculator.analyze(sniperMid(true), ACCOUNT, null, null);
 
@@ -195,6 +236,8 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.teamGold()).isEmpty();
         assertThat(a.timeline()).isEqualTo(MatchAnalysis.Timeline.EMPTY);
         assertThat(a.playersItems()).isEmpty();
+        assertThat(a.itemTimings()).isEmpty();
+        assertThat(a.context().directOpponent()).isNull();
     }
 
     @Test

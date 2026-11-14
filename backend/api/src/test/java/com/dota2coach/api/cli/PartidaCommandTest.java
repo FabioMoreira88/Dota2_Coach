@@ -117,7 +117,7 @@ class PartidaCommandTest {
         AnalyzedMatch match = new AnalyzedMatch(MATCH, NOW, Duration.ofMinutes(40), true, GameMode.ALL_PICK, true,
                 parsed, List.of(), List.of(), List.of(me), List.of(), List.of());
         return new MatchSnapshot(match, Map.of(SNIPER, new Hero(SNIPER, "Sniper", "agi", List.of())), Map.of(),
-                Map.of(), Map.of(), HeroMatchups.empty(SNIPER), Map.of());
+                Map.of(), Map.of(), HeroMatchups.empty(SNIPER), Map.of(), Map.of());
     }
 
     /** Raio-X com 3 partidas de Sniper, salvo como JSON no histórico como o comando do Raio-X faz. */

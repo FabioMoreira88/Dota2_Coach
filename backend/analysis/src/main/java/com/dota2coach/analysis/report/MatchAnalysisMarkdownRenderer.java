@@ -12,6 +12,7 @@ import com.dota2coach.analysis.metric.MatchAnalysis.DeathLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathPhaseLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.FightLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.ItemLine;
+import com.dota2coach.analysis.metric.MatchAnalysis.ItemTimingLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.LaneOpponent;
 import com.dota2coach.analysis.metric.MatchAnalysis.Laning;
 import com.dota2coach.analysis.metric.MatchAnalysis.Line;
@@ -61,6 +62,7 @@ public class MatchAnalysisMarkdownRenderer {
         deaths(md, a);
         items(md, a);
         playersItems(md, a);
+        itemTimings(md, a);
         vision(md, a);
         teamGold(md, a);
         objectives(md, a);
@@ -160,7 +162,8 @@ public class MatchAnalysisMarkdownRenderer {
             md.append("| Adversário | Vitórias do ").append(escape(a.heroName())).append(" | Partidas |\n")
                     .append("|---|---:|---:|\n");
             for (Matchup m : c.matchups()) {
-                md.append("| ").append(escape(m.heroName())).append(m.laneOpponent() ? " (sua rota)" : "")
+                md.append("| ").append(escape(m.heroName()))
+                        .append(m.directOpponent() ? " (adversário direto)" : m.laneOpponent() ? " (sua rota)" : "")
                         .append(" | ").append(pct(m.winRate())).append(" | ").append(m.games()).append(" |\n");
             }
             md.append('\n');
@@ -179,23 +182,54 @@ public class MatchAnalysisMarkdownRenderer {
     }
 
     private static void draft(StringBuilder md, Context c) {
-        if (!c.pickOrderKnown()) {
+        boolean positions = c.picks().stream().anyMatch(p -> p.positionBasis() != null);
+        if (!c.pickOrderKnown() && !positions) {
             md.append("A OpenDota não informou a ordem dos picks desta partida.\n\n");
             return;
         }
         md.append("### Draft\n\n");
-        md.append("| Pick | Time | Herói |\n|---:|---|---|\n");
+        if (!c.pickOrderKnown()) {
+            md.append("A OpenDota não informou a ordem dos picks desta partida.\n\n");
+        }
+        md.append("| Pick | Time | Herói |").append(positions ? " Posição |" : "").append("\n|---:|---|---|")
+                .append(positions ? "---|" : "").append('\n');
         for (Pick p : c.picks()) {
-            md.append("| ").append(p.order()).append(" | ").append(p.yourTeam() ? "seu" : "adversário").append(" | ")
+            md.append("| ").append(p.order() == null ? NONE : p.order()).append(" | ")
+                    .append(p.yourTeam() ? "seu" : "adversário").append(" | ")
                     .append(p.you() ? "**" + escape(p.heroName()) + " (você)**" : escape(p.heroName()))
-                    .append(" |\n");
+                    .append(" |");
+            if (positions) {
+                md.append(' ').append(position(p)).append(" |");
+            }
+            md.append('\n');
         }
         md.append('\n');
+        if (positions) {
+            md.append("A OpenDota não informa a posição escolhida no matchmaking. A sua é a que você informou; a dos ")
+                    .append("outros é estimada pela rota e pelo patrimônio de cada um nesta partida e pode errar ")
+                    .append("quando há troca de rota, roaming ou um suporte que farmou mais que o carry. \"Pick fora ")
+                    .append("do comum\" marca um herói jogado numa posição que não combina com as funções oficiais ")
+                    .append("dele.\n\n");
+        }
+        if (c.directOpponent() != null) {
+            md.append("Seu adversário direto pela posição: ").append(escape(c.directOpponent())).append(".\n\n");
+        }
         if (c.yourTeamPickNumber() != null) {
             md.append("Você foi o ").append(c.yourTeamPickNumber()).append("º pick do seu time")
                     .append(c.yourTeamPickNumber() == 5 ? " (último, já vendo os 5 adversários)" : "")
                     .append(".\n\n");
         }
+    }
+
+    private static String position(Pick p) {
+        if (p.position() == null) {
+            return NONE;
+        }
+        if (p.you()) {
+            return p.position() + " (informada)";
+        }
+        return p.position() + " (" + (p.positionBasis() == null ? "estimada" : p.positionBasis()) + ")"
+                + (p.unusualPick() ? ", pick fora do comum" : "");
     }
 
     private static String heroes(TeamProfile team) {
@@ -342,6 +376,26 @@ public class MatchAnalysisMarkdownRenderer {
                             : p.popularNotBuilt().stream().map(XRayMarkdownRenderer::escape)
                                     .collect(Collectors.joining(", ")))
                     .append(" |\n");
+        }
+        md.append('\n');
+    }
+
+    private static void itemTimings(StringBuilder md, MatchAnalysis a) {
+        if (a.itemTimings().isEmpty()) {
+            return;
+        }
+        md.append("## Tempos de item contra o normal do herói\n\n");
+        md.append("Seus itens principais e os do adversário direto (ou da sua rota), comparados com quando o herói ")
+                .append("costuma terminá-los em partidas públicas recentes. A faixa normal é a da mediana; ")
+                .append("\"vitórias nessa faixa\" é a taxa de vitória do herói quando termina o item no mesmo tempo ")
+                .append("que nesta partida.\n\n");
+        md.append("| Herói | Item | Saiu aos | Faixa normal | Comparação | Vitórias nessa faixa |\n")
+                .append("|---|---|---:|---|---|---:|\n");
+        for (ItemTimingLine l : a.itemTimings()) {
+            md.append("| ").append(l.you() ? "**" + escape(l.heroName()) + " (você)**" : escape(l.heroName()))
+                    .append(" | ").append(escape(l.itemName())).append(" | ").append(clock(l.timeSeconds()))
+                    .append(" | ").append(l.usualRange()).append(" | ").append(l.comparison()).append(" | ")
+                    .append(l.winRate() == null ? NONE : pct(l.winRate())).append(" |\n");
         }
         md.append('\n');
     }

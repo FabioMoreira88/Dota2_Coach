@@ -8,6 +8,7 @@ import com.dota2coach.analysis.metric.MatchAnalysis.Pick;
 import com.dota2coach.analysis.metric.MatchAnalysis.RoleCount;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamProfile;
 import com.dota2coach.core.enums.DamageType;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.Hero;
@@ -49,15 +50,29 @@ final class MatchContextCalculator {
 
     private MatchContextCalculator() {}
 
-    static Context calculate(MatchSnapshot snapshot, MatchPlayer me) {
+    /**
+     * @param position posição que o jogador informou, ou nulo
+     * @param estimated posição estimada dos jogadores por id do herói
+     * @param directOpponent adversário direto da posição do jogador, ou nulo
+     */
+    static Context calculate(MatchSnapshot snapshot, MatchPlayer me, Position position,
+            Map<Integer, PositionEstimator.Estimate> estimated, MatchPlayer directOpponent) {
         AnalyzedMatch match = snapshot.match();
         Side mySide = me.side();
         boolean orderKnown = !match.picks().isEmpty() && match.picks().stream().allMatch(p -> p.order() != null);
         List<Pick> picks = match.picks().stream()
                 .sorted(Comparator.comparing(AnalyzedMatch.DraftPick::order,
                         Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(p -> new Pick(p.order(), snapshot.heroName(p.heroId()), p.side() == mySide,
-                        p.heroId() == me.heroId() && p.side() == mySide))
+                .map(p -> {
+                    boolean you = p.heroId() == me.heroId() && p.side() == mySide;
+                    PositionEstimator.Estimate estimate = you ? null : estimated.get(p.heroId());
+                    Integer pos = you ? (position == null ? null : position.number())
+                            : estimate == null ? null : estimate.position();
+                    Hero hero = snapshot.heroes().get(p.heroId());
+                    boolean unusual = pos != null && hero != null && PositionEstimator.unusual(hero.roles(), pos);
+                    return new Pick(p.order(), snapshot.heroName(p.heroId()), p.side() == mySide, you, pos,
+                            estimate == null ? null : estimate.basis(), unusual);
+                })
                 .toList();
         Integer yourTeamPickNumber = null;
         if (orderKnown) {
@@ -80,8 +95,9 @@ final class MatchContextCalculator {
                 yourTeamPickNumber,
                 List.of(team(snapshot, mine, true, won), team(snapshot, theirs, false, !won)),
                 damageShare(List.of(me.damageReceivedBySource()), snapshot.damageTypes()),
-                matchups(snapshot, me, theirs),
-                power(snapshot, mine, theirs));
+                matchups(snapshot, me, theirs, directOpponent),
+                power(snapshot, mine, theirs),
+                directOpponent == null ? null : snapshot.heroName(directOpponent.heroId()));
     }
 
     private static TeamProfile team(MatchSnapshot snapshot, List<MatchPlayer> players, boolean yours, boolean won) {
@@ -122,7 +138,8 @@ final class MatchContextCalculator {
                 totals.getOrDefault(DamageType.OTHER, 0L) / (double) total);
     }
 
-    private static List<Matchup> matchups(MatchSnapshot snapshot, MatchPlayer me, List<MatchPlayer> enemies) {
+    private static List<Matchup> matchups(MatchSnapshot snapshot, MatchPlayer me, List<MatchPlayer> enemies,
+            MatchPlayer directOpponent) {
         HeroMatchups matchups = snapshot.playerMatchups();
         if (matchups == null || matchups.heroId() != me.heroId()) {
             return List.of();
@@ -136,9 +153,11 @@ final class MatchContextCalculator {
             }
             lines.add(new Matchup(snapshot.heroName(enemy.heroId()),
                     realLane && Objects.equals(enemy.physicalLane(), me.physicalLane()),
+                    directOpponent != null && enemy.heroId() == directOpponent.heroId(),
                     record.games(), record.winRate()));
         }
-        lines.sort(Comparator.comparing(Matchup::laneOpponent).reversed()
+        lines.sort(Comparator.comparing(Matchup::directOpponent).reversed()
+                .thenComparing(Comparator.comparing(Matchup::laneOpponent).reversed())
                 .thenComparing(Comparator.comparingDouble(Matchup::winRate)));
         return lines;
     }

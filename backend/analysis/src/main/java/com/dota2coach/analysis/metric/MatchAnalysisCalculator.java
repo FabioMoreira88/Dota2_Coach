@@ -44,6 +44,8 @@ public class MatchAnalysisCalculator {
         String heroName = snapshot.heroName(me.heroId());
         Map<String, Item> itemsByKey = snapshot.items().values().stream()
                 .collect(Collectors.toMap(Item::key, Function.identity(), (a, b) -> a));
+        Map<Integer, PositionEstimator.Estimate> estimated = PositionEstimator.estimate(match);
+        MatchPlayer direct = PositionEstimator.directOpponent(match, me, position, estimated).orElse(null);
         return new MatchAnalysis(
                 match.matchId(),
                 match.startTime(),
@@ -69,9 +71,10 @@ public class MatchAnalysisCalculator {
                 me.sentriesPlaced(),
                 teamGold(match, me),
                 usual(latestXRay, heroName),
-                MatchContextCalculator.calculate(snapshot, me),
+                MatchContextCalculator.calculate(snapshot, me, position, estimated, direct),
                 MatchTimelineCalculator.calculate(snapshot, me),
-                MatchItemsCalculator.calculate(snapshot, me, itemsByKey));
+                MatchItemsCalculator.calculate(snapshot, me, itemsByKey),
+                MatchItemTimingCalculator.calculate(snapshot, me, direct, itemsByKey));
     }
 
     static Double killParticipation(AnalyzedMatch match, MatchPlayer me) {
