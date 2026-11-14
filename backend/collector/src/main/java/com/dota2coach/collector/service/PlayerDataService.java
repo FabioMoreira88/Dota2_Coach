@@ -34,31 +34,65 @@ public class PlayerDataService {
      * @throws PlayerNotFoundException se a OpenDota não conhece a conta
      */
     public PlayerSummary getSummary(long accountId) {
-        return summaryCache.get(accountId, this::load);
+        PlayerSummary cached = summaryCache.getIfPresent(accountId);
+        if (cached != null) {
+            return cached;
+        }
+        Loaded loaded = load(accountId);
+        if (loaded.complete()) {
+            summaryCache.put(accountId, loaded.summary());
+        }
+        return loaded.summary();
     }
 
-    private PlayerSummary load(long accountId) {
+    /** Resumo e se todos os endpoints responderam; um resumo incompleto não vai para o cache. */
+    private record Loaded(PlayerSummary summary, boolean complete) {}
+
+    private Loaded load(long accountId) {
         OpenDotaPlayerResponse player = openDotaClient.getPlayer(accountId);
         if (player == null || player.profile() == null) {
             throw new PlayerNotFoundException(accountId);
         }
-        List<OpenDotaPlayerHeroResponse> heroes = openDotaClient.getHeroes(accountId);
-        return OpenDotaPlayerMapper.toPlayerSummary(accountId, player, winLoss(accountId, heroes), heroes, TOP_HEROES);
+        List<OpenDotaPlayerHeroResponse> heroes = heroes(accountId);
+        OpenDotaWinLossResponse winLoss = winLoss(accountId);
+        boolean complete = heroes != null && winLoss != null;
+        if (winLoss == null) {
+            winLoss = heroes == null ? new OpenDotaWinLossResponse(0, 0) : sumOf(heroes);
+        }
+        PlayerSummary summary = OpenDotaPlayerMapper.toPlayerSummary(
+                accountId, player, winLoss, heroes == null ? List.of() : heroes, TOP_HEROES);
+        return new Loaded(summary, complete);
     }
 
     /**
-     * Vitórias e derrotas pelo /wl. Se esse endpoint falhar (já ficou fora do ar sozinho na OpenDota), soma as
-     * partidas por herói, que dão o mesmo total.
+     * Partidas por herói. Se o endpoint falhar (a OpenDota já deixou o /heroes fora do ar sozinho), devolve
+     * {@code null}: o Raio-X não depende dele, porque calcula tudo a partir das partidas.
      */
-    private OpenDotaWinLossResponse winLoss(long accountId, List<OpenDotaPlayerHeroResponse> heroes) {
+    private List<OpenDotaPlayerHeroResponse> heroes(long accountId) {
+        try {
+            return openDotaClient.getHeroes(accountId);
+        } catch (ExternalServiceUnavailableException e) {
+            log.warn("OpenDota /heroes indisponível para a conta {}; seguindo sem os heróis mais jogados.", accountId);
+            return null;
+        }
+    }
+
+    /**
+     * Vitórias e derrotas pelo /wl, ou {@code null} se esse endpoint falhar (também já ficou fora do ar sozinho
+     * na OpenDota). Nesse caso a soma das partidas por herói dá o mesmo total.
+     */
+    private OpenDotaWinLossResponse winLoss(long accountId) {
         try {
             return openDotaClient.getWinLoss(accountId);
         } catch (ExternalServiceUnavailableException e) {
-            int games = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::games).sum();
-            int wins = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::win).sum();
-            log.warn("OpenDota /wl indisponível para a conta {}; usando a soma das partidas por herói ({} partidas).",
-                    accountId, games);
-            return new OpenDotaWinLossResponse(wins, games - wins);
+            log.warn("OpenDota /wl indisponível para a conta {}; usando a soma das partidas por herói.", accountId);
+            return null;
         }
+    }
+
+    private static OpenDotaWinLossResponse sumOf(List<OpenDotaPlayerHeroResponse> heroes) {
+        int games = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::games).sum();
+        int wins = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::win).sum();
+        return new OpenDotaWinLossResponse(wins, games - wins);
     }
 }
