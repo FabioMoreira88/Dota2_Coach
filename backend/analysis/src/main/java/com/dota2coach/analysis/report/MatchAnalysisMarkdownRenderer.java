@@ -19,6 +19,7 @@ import com.dota2coach.analysis.metric.MatchAnalysis.Matchup;
 import com.dota2coach.analysis.metric.MatchAnalysis.ObjectiveLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.PhasePower;
 import com.dota2coach.analysis.metric.MatchAnalysis.Pick;
+import com.dota2coach.analysis.metric.MatchAnalysis.PlayerItems;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamProfile;
 import com.dota2coach.analysis.metric.MatchAnalysis.Timeline;
@@ -59,6 +60,7 @@ public class MatchAnalysisMarkdownRenderer {
         laning(md, a);
         deaths(md, a);
         items(md, a);
+        playersItems(md, a);
         vision(md, a);
         teamGold(md, a);
         objectives(md, a);
@@ -315,6 +317,31 @@ public class MatchAnalysisMarkdownRenderer {
                 md.append(' ').append(i.usualMinute() == null ? NONE : dec(i.usualMinute()) + " min").append(" |");
             }
             md.append('\n');
+        }
+        md.append('\n');
+    }
+
+    private static void playersItems(StringBuilder md, MatchAnalysis a) {
+        if (a.playersItems().isEmpty()) {
+            return;
+        }
+        md.append("## Itens dos dois times\n\n");
+        md.append("Primeira compra de cada item principal. \"Populares que não fez\" são os itens principais mais ")
+                .append("comprados com o herói em partidas públicas recentes, por fase do jogo, que o jogador não ")
+                .append("comprou nesta partida. Não ter feito um deles não é erro por si só.\n\n");
+        md.append("| Time | Herói | Itens principais | Populares que não fez |\n|---|---|---|---|\n");
+        for (PlayerItems p : a.playersItems()) {
+            md.append("| ").append(p.yourTeam() ? "seu" : "adversário").append(" | ")
+                    .append(p.you() ? "**" + escape(p.heroName()) + " (você)**" : escape(p.heroName())).append(" | ")
+                    .append(p.items().isEmpty() ? "nenhum"
+                            : p.items().stream().map(i -> escape(i.itemName()) + " " + clock(i.timeSeconds()))
+                                    .collect(Collectors.joining(", ")))
+                    .append(" | ")
+                    .append(!p.popularKnown() ? NONE
+                            : p.popularNotBuilt().isEmpty() ? "fez todos"
+                            : p.popularNotBuilt().stream().map(XRayMarkdownRenderer::escape)
+                                    .collect(Collectors.joining(", ")))
+                    .append(" |\n");
         }
         md.append('\n');
     }

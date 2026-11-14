@@ -20,6 +20,8 @@ import java.util.Map;
  * @param usual padrão do jogador segundo o último Raio-X, ou nulo se ainda não há Raio-X salvo
  * @param context draft, composição e matchups dos dois times
  * @param timeline objetivos e lutas que decidiram a partida (vazio sem replay analisado)
+ * @param playersItems itens principais dos dez jogadores, seu time primeiro e você no topo (vazio sem replay
+ *     analisado)
  */
 public record MatchAnalysis(
         long matchId,
@@ -45,7 +47,8 @@ public record MatchAnalysis(
         List<TeamGold> teamGold,
         Usual usual,
         Context context,
-        Timeline timeline) {
+        Timeline timeline,
+        List<PlayerItems> playersItems) {
 
     public MatchAnalysis {
         percentiles = Map.copyOf(percentiles);
@@ -53,6 +56,7 @@ public record MatchAnalysis(
         deathsByPhase = List.copyOf(deathsByPhase);
         items = List.copyOf(items);
         teamGold = List.copyOf(teamGold);
+        playersItems = List.copyOf(playersItems);
     }
 
     /** Números finais do jogador na partida. */
@@ -240,4 +244,23 @@ public record MatchAnalysis(
             enemiesDead = List.copyOf(enemiesDead);
         }
     }
+
+    /**
+     * Itens de um jogador na partida.
+     *
+     * @param items primeira compra de cada item principal, em ordem de tempo
+     * @param popularNotBuilt itens principais mais comprados com o herói em partidas públicas que o jogador não
+     *     fez; vazio se a OpenDota não informou
+     * @param popularKnown se a OpenDota informou os itens populares do herói
+     */
+    public record PlayerItems(String heroName, boolean yourTeam, boolean you, List<ItemTime> items,
+            List<String> popularNotBuilt, boolean popularKnown) {
+
+        public PlayerItems {
+            items = List.copyOf(items);
+            popularNotBuilt = List.copyOf(popularNotBuilt);
+        }
+    }
+
+    public record ItemTime(String itemName, int timeSeconds) {}
 }

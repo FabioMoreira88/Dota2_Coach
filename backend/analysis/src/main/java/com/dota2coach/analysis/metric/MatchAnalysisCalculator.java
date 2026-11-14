@@ -71,7 +71,8 @@ public class MatchAnalysisCalculator {
                 teamGold(match, me),
                 usual(latestXRay, heroName),
                 MatchContextCalculator.calculate(snapshot, me),
-                MatchTimelineCalculator.calculate(snapshot, me));
+                MatchTimelineCalculator.calculate(snapshot, me),
+                MatchItemsCalculator.calculate(snapshot, me, itemsByKey));
     }
 
     static Double killParticipation(AnalyzedMatch match, MatchPlayer me) {
