@@ -1,14 +1,22 @@
 package com.dota2coach.collector.service;
 
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
+import com.dota2coach.collector.dto.opendota.OpenDotaPlayerHeroResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaPlayerResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaWinLossResponse;
 import com.dota2coach.collector.mapper.OpenDotaPlayerMapper;
+import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import com.dota2coach.core.exception.PlayerNotFoundException;
 import com.dota2coach.core.model.PlayerSummary;
 import com.github.benmanes.caffeine.cache.Cache;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Busca dados públicos do jogador na OpenDota, com cache em memória. */
 public class PlayerDataService {
+
+    private static final Logger log = LoggerFactory.getLogger(PlayerDataService.class);
 
     static final int TOP_HEROES = 10;
 
@@ -34,11 +42,23 @@ public class PlayerDataService {
         if (player == null || player.profile() == null) {
             throw new PlayerNotFoundException(accountId);
         }
-        return OpenDotaPlayerMapper.toPlayerSummary(
-                accountId,
-                player,
-                openDotaClient.getWinLoss(accountId),
-                openDotaClient.getHeroes(accountId),
-                TOP_HEROES);
+        List<OpenDotaPlayerHeroResponse> heroes = openDotaClient.getHeroes(accountId);
+        return OpenDotaPlayerMapper.toPlayerSummary(accountId, player, winLoss(accountId, heroes), heroes, TOP_HEROES);
+    }
+
+    /**
+     * Vitórias e derrotas pelo /wl. Se esse endpoint falhar (já ficou fora do ar sozinho na OpenDota), soma as
+     * partidas por herói, que dão o mesmo total.
+     */
+    private OpenDotaWinLossResponse winLoss(long accountId, List<OpenDotaPlayerHeroResponse> heroes) {
+        try {
+            return openDotaClient.getWinLoss(accountId);
+        } catch (ExternalServiceUnavailableException e) {
+            int games = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::games).sum();
+            int wins = heroes.stream().mapToInt(OpenDotaPlayerHeroResponse::win).sum();
+            log.warn("OpenDota /wl indisponível para a conta {}; usando a soma das partidas por herói ({} partidas).",
+                    accountId, games);
+            return new OpenDotaWinLossResponse(wins, games - wins);
+        }
     }
 }
