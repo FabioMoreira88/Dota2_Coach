@@ -10,20 +10,26 @@ import com.dota2coach.analysis.metric.MatchAnalysis.Context;
 import com.dota2coach.analysis.metric.MatchAnalysis.DamageShare;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathPhaseLine;
+import com.dota2coach.analysis.metric.MatchAnalysis.FightLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.ItemLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.LaneOpponent;
 import com.dota2coach.analysis.metric.MatchAnalysis.Laning;
 import com.dota2coach.analysis.metric.MatchAnalysis.Line;
 import com.dota2coach.analysis.metric.MatchAnalysis.Matchup;
+import com.dota2coach.analysis.metric.MatchAnalysis.ObjectiveLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.PhasePower;
 import com.dota2coach.analysis.metric.MatchAnalysis.Pick;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamProfile;
+import com.dota2coach.analysis.metric.MatchAnalysis.Timeline;
 import com.dota2coach.analysis.metric.MatchAnalysis.Usual;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /** Gera o relatório de uma partida escolhida em Markdown, em português. */
@@ -55,6 +61,8 @@ public class MatchAnalysisMarkdownRenderer {
         items(md, a);
         vision(md, a);
         teamGold(md, a);
+        objectives(md, a);
+        fights(md, a);
         return md.toString();
     }
 
@@ -328,6 +336,62 @@ public class MatchAnalysisMarkdownRenderer {
                     .append(g.advantage()).append(" |\n");
         }
         md.append('\n');
+    }
+
+    private static void objectives(StringBuilder md, MatchAnalysis a) {
+        if (a.timeline().objectives().isEmpty()) {
+            return;
+        }
+        md.append("## Objetivos\n\n");
+        long towersYours = a.timeline().objectives().stream()
+                .filter(o -> o.yourTeam() && o.event().contains("torre")).count();
+        long towersEnemy = a.timeline().objectives().stream()
+                .filter(o -> !o.yourTeam() && o.event().contains("torre")).count();
+        md.append("Torres derrubadas: seu time ").append(towersYours).append(", adversário ").append(towersEnemy)
+                .append(".\n\n");
+        md.append("| Tempo | Quem | O quê |\n|---|---|---|\n");
+        for (ObjectiveLine o : a.timeline().objectives()) {
+            md.append("| ").append(clock(o.timeSeconds())).append(" | ")
+                    .append(o.yourTeam() ? "Seu time" : "Adversário").append(" | ").append(o.event()).append(" |\n");
+        }
+        md.append('\n');
+    }
+
+    private static void fights(StringBuilder md, MatchAnalysis a) {
+        Timeline t = a.timeline();
+        if (t.fightsTotal() == 0) {
+            return;
+        }
+        md.append("## Lutas que mais mexeram no ouro\n\n");
+        md.append("A OpenDota detectou ").append(t.fightsTotal()).append(t.fightsTotal() == 1 ? " luta" : " lutas")
+                .append(" com 3 ou mais mortes. Seu time ganhou mais ouro que o adversário em ")
+                .append(t.fightsWonByGold()).append(", e você participou de ").append(t.fightsWithYou())
+                .append(". A luta que não terminou antes do fim do jogo não entra.\n\n");
+        md.append("| Tempo | Ouro para seu time | Mortes do seu time | Mortes do adversário | Você |\n")
+                .append("|---|---:|---|---|---|\n");
+        for (FightLine f : t.biggestFights()) {
+            md.append("| ").append(clock(f.startSeconds())).append(" a ").append(clock(f.endSeconds())).append(" | ")
+                    .append(f.goldSwing() > 0 ? "+" : "").append(f.goldSwing()).append(" | ")
+                    .append(heroes(f.yourTeamDead()))
+                    .append(f.buybacks() > 0 ? " (" + f.buybacks() + " buyback" + (f.buybacks() > 1 ? "s" : "") + ")"
+                            : "")
+                    .append(" | ").append(heroes(f.enemiesDead())).append(" | ")
+                    .append(!f.youTookPart() ? "não participou" : f.youDied() ? "participou e morreu" : "participou")
+                    .append(" |\n");
+        }
+        md.append('\n');
+    }
+
+    /** Heróis agrupados, ex.: "Slark (2), Zeus", ou "nenhuma". */
+    private static String heroes(List<String> names) {
+        if (names.isEmpty()) {
+            return "nenhuma";
+        }
+        Map<String, Long> counts = names.stream()
+                .collect(Collectors.groupingBy(n -> n, LinkedHashMap::new, Collectors.counting()));
+        return counts.entrySet().stream()
+                .map(e -> escape(e.getKey()) + (e.getValue() > 1 ? " (" + e.getValue() + ")" : ""))
+                .collect(Collectors.joining(", "));
     }
 
     private static String value(Integer value) {

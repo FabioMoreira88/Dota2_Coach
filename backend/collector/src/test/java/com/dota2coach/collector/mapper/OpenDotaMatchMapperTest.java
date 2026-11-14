@@ -163,10 +163,40 @@ class OpenDotaMatchMapperTest {
         var detail = new OpenDotaMatchDetailResponse(1L, 0L, 1800, true, 22, 7, null, null, null, List.of(),
                 List.of(new OpenDotaMatchDetailResponse.Player(130, null, 74, false, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null)));
+                        null, null, null, null, null, null, null, null)), null, null);
 
-        assertThat(OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS).orElseThrow().picks())
-                .containsExactly(new AnalyzedMatch.DraftPick(null, 74, Side.DIRE));
+        AnalyzedMatch match = OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS).orElseThrow();
+        assertThat(match.picks()).containsExactly(new AnalyzedMatch.DraftPick(null, 74, Side.DIRE));
+        assertThat(match.objectives()).isEmpty();
+        assertThat(match.teamfights()).isEmpty();
+    }
+
+    @Test
+    void converteObjetivosEmOrdemDeTempoPeloTimeQueConquistou() throws IOException {
+        assertThat(fullMatch().objectives())
+                .as("aegis, courier e construções que não são torre, barracks ou Ancient ficam de fora")
+                .containsExactly(
+                        new AnalyzedMatch.Objective(95, AnalyzedMatch.ObjectiveKind.FIRST_BLOOD, Side.DIRE, null),
+                        new AnalyzedMatch.Objective(854, AnalyzedMatch.ObjectiveKind.BUILDING, Side.RADIANT,
+                                "npc_dota_badguys_tower1_mid"),
+                        new AnalyzedMatch.Objective(1500, AnalyzedMatch.ObjectiveKind.ROSHAN, Side.DIRE, null),
+                        new AnalyzedMatch.Objective(1700, AnalyzedMatch.ObjectiveKind.BUILDING, Side.DIRE,
+                                "npc_dota_goodguys_range_rax_bot"));
+    }
+
+    @Test
+    void ligaCadaJogadorDaLutaAoHeroiPelaOrdemDosSlots() throws IOException {
+        List<AnalyzedMatch.Teamfight> fights = fullMatch().teamfights();
+
+        assertThat(fights).as("a luta sem os jogadores todos fica de fora").hasSize(1);
+        AnalyzedMatch.Teamfight fight = fights.get(0);
+        assertThat(fight.start()).isEqualTo(1185);
+        assertThat(fight.end()).isEqualTo(1230);
+        assertThat(fight.players()).containsExactly(
+                new AnalyzedMatch.FightPlayer(14, Side.RADIANT, 1, -150, 800, 0, 0),
+                new AnalyzedMatch.FightPlayer(2, Side.RADIANT, 1, -200, 400, 0, 1),
+                new AnalyzedMatch.FightPlayer(74, Side.DIRE, 0, 600, 2000, 0, 0),
+                new AnalyzedMatch.FightPlayer(1, Side.DIRE, 1, 250, 900, 0, 0));
     }
 
     @Test
@@ -180,7 +210,7 @@ class OpenDotaMatchMapperTest {
 
     @Test
     void partidaSemResultadoNaoViraAnalise() {
-        var detail = new OpenDotaMatchDetailResponse(1L, null, null, null, null, null, null, null, null, null, List.of());
+        var detail = new OpenDotaMatchDetailResponse(1L, null, null, null, null, null, null, null, null, null, List.of(), null, null);
 
         assertThat(OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS)).isEmpty();
     }

@@ -19,6 +19,7 @@ import java.util.Map;
  * @param percentiles percentil (0 a 1) do jogador entre as partidas públicas do herói, por métrica
  * @param usual padrão do jogador segundo o último Raio-X, ou nulo se ainda não há Raio-X salvo
  * @param context draft, composição e matchups dos dois times
+ * @param timeline objetivos e lutas que decidiram a partida (vazio sem replay analisado)
  */
 public record MatchAnalysis(
         long matchId,
@@ -43,7 +44,8 @@ public record MatchAnalysis(
         int sentriesPlaced,
         List<TeamGold> teamGold,
         Usual usual,
-        Context context) {
+        Context context,
+        Timeline timeline) {
 
     public MatchAnalysis {
         percentiles = Map.copyOf(percentiles);
@@ -195,4 +197,47 @@ public record MatchAnalysis(
 
     /** Taxa de vitória média dos heróis de cada time numa faixa de duração, ou nulo sem amostra. */
     public record PhasePower(String phase, Double yourTeam, Double enemyTeam) {}
+
+    /**
+     * Como a partida foi decidida.
+     *
+     * @param objectives torres, barracks, Ancient, Roshans e first blood, em ordem de tempo
+     * @param fightsTotal lutas com 3 ou mais mortes que a OpenDota detectou
+     * @param fightsWithYou lutas em que você causou dano, curou ou morreu
+     * @param fightsWonByGold lutas em que seu time ganhou mais ouro que o adversário
+     * @param biggestFights as lutas que mais mexeram no ouro, em ordem de tempo
+     */
+    public record Timeline(List<ObjectiveLine> objectives, int fightsTotal, int fightsWithYou, int fightsWonByGold,
+            List<FightLine> biggestFights) {
+
+        public static final Timeline EMPTY = new Timeline(List.of(), 0, 0, 0, List.of());
+
+        public Timeline {
+            objectives = List.copyOf(objectives);
+            biggestFights = List.copyOf(biggestFights);
+        }
+    }
+
+    /**
+     * @param event o que aconteceu, para vir depois de quem fez (ex.: "derrubou a torre T1 do meio")
+     * @param yourTeam se foi o seu time que conquistou
+     */
+    public record ObjectiveLine(int timeSeconds, String event, boolean yourTeam) {}
+
+    /**
+     * Uma luta.
+     *
+     * @param goldSwing ouro que seu time ganhou na luta menos o que o adversário ganhou (negativo se perdeu)
+     * @param yourTeamDead heróis do seu time que morreram, com repetição se morreram mais de uma vez
+     * @param youTookPart se você causou dano, curou ou morreu na luta
+     * @param buybacks buybacks do seu time na luta
+     */
+    public record FightLine(int startSeconds, int endSeconds, int goldSwing, List<String> yourTeamDead,
+            List<String> enemiesDead, boolean youTookPart, boolean youDied, int buybacks) {
+
+        public FightLine {
+            yourTeamDead = List.copyOf(yourTeamDead);
+            enemiesDead = List.copyOf(enemiesDead);
+        }
+    }
 }
