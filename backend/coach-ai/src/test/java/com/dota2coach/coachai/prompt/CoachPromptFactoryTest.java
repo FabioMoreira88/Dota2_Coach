@@ -12,7 +12,8 @@ class CoachPromptFactoryTest {
         CoachPrompt prompt = CoachPromptFactory.fromXRayReport("# Raio-X de Heisenberg\n\n| a | b |\n");
 
         assertThat(prompt.user()).contains("<raio_x>\n# Raio-X de Heisenberg\n\n| a | b |\n</raio_x>");
-        assertThat(prompt.system()).contains("no máximo 3 focos").contains("Não sugira picks");
+        assertThat(prompt.system()).contains("no máximo 3 focos").contains("Não sugira picks")
+                .contains("informada pelo próprio jogador", "não tente adivinhar");
     }
 
     @Test

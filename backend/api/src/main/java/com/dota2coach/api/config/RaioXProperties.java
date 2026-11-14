@@ -1,5 +1,6 @@
 package com.dota2coach.api.config;
 
+import com.dota2coach.core.enums.Position;
 import java.time.ZoneId;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -11,9 +12,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param output arquivo do relatório; {@code {accountId}} é trocado pelo id. Relativo à pasta backend/api.
  * @param parseLimit quantas partidas recentes sem replay analisado pedir à OpenDota; 0 desliga
  * @param zone fuso usado nas datas do relatório
+ * @param position posição principal que o jogador informa (carry, mid, offlane, soft-support, hard-support)
  */
 @ConfigurationProperties(prefix = "dota2coach.raio-x")
-public record RaioXProperties(Long accountId, String output, Integer parseLimit, ZoneId zone) {
+public record RaioXProperties(Long accountId, String output, Integer parseLimit, ZoneId zone, Position position) {
 
     public static final String DEFAULT_OUTPUT = "../../docs/fase0/raio-x-{accountId}.md";
 

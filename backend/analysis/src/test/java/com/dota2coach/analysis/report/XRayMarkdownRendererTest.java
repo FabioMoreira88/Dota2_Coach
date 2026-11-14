@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dota2coach.analysis.metric.XRayCalculator;
 import com.dota2coach.core.enums.Lane;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.model.MatchRecord;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -27,11 +28,13 @@ class XRayMarkdownRendererTest {
                     List.of(TREADS, MAELSTROM)));
         }
 
-        String md = renderer.render(new XRayCalculator().calculate(snapshot(53, matches)));
+        String md = renderer.render(new XRayCalculator().calculate(snapshot(53, matches), Position.MID));
 
         assertThat(md).startsWith("# Raio-X de Heisenberg\n");
         assertThat(md).contains("- **Gerado em:** 11/11/2026 09:00");
         assertThat(md).contains("- **Medalha:** Lenda 3");
+        assertThat(md).contains("- **Posição principal (informada pelo jogador):** Meio (posição 2)");
+        assertThat(md).doesNotContain("Funções dos heróis");
         assertThat(md).contains("| Taxa de vitória | 66,7% | 66,7% |");
         assertThat(md).contains("| Sniper | 30 | 66,7% | 4,0 | 500 | 600 | 30 (66,7%) | 54,0% |");
         assertThat(md).contains("| Meio | 5 |");
@@ -44,7 +47,8 @@ class XRayMarkdownRendererTest {
     void perfilVazioNaoQuebra() {
         String md = renderer.render(new XRayCalculator().calculate(snapshot(null, List.of())));
 
-        assertThat(md).contains("- **Medalha:** sem medalha", "_Sem partidas no recorte._",
+        assertThat(md).contains("- **Medalha:** sem medalha",
+                "- **Posição principal (informada pelo jogador):** não informada", "_Sem partidas no recorte._",
                 "em todas as faixas (você está sem medalha)");
     }
 

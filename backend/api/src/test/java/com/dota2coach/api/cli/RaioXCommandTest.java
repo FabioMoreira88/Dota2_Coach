@@ -12,6 +12,7 @@ import com.dota2coach.analysis.metric.XRayCalculator;
 import com.dota2coach.analysis.report.XRayMarkdownRenderer;
 import com.dota2coach.api.config.RaioXProperties;
 import com.dota2coach.collector.service.ProfileSnapshotService;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.model.PlayerSummary;
 import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.SteamId;
@@ -36,7 +37,8 @@ class RaioXCommandTest {
 
     private RaioXCommand command(int parseLimit) {
         RaioXProperties props = new RaioXProperties(
-                ACCOUNT, dir.resolve("fase0/raio-x-{accountId}.md").toString(), parseLimit, ZoneId.of("UTC"));
+                ACCOUNT, dir.resolve("fase0/raio-x-{accountId}.md").toString(), parseLimit, ZoneId.of("UTC"),
+                Position.MID);
         return new RaioXCommand(snapshotService, new XRayCalculator(),
                 new XRayMarkdownRenderer(props.zone()), props);
     }
@@ -58,7 +60,8 @@ class RaioXCommandTest {
 
         Path report = dir.resolve("fase0/raio-x-34839344.md");
         assertThat(report).exists();
-        assertThat(Files.readString(report)).startsWith("# Raio-X de Heisenberg");
+        assertThat(Files.readString(report)).startsWith("# Raio-X de Heisenberg")
+                .contains("Meio (posição 2)");
         verify(snapshotService).requestReplayParsing(snapshot.matches(), 5);
     }
 
@@ -73,7 +76,7 @@ class RaioXCommandTest {
 
     @Test
     void valoresPadraoDasPropriedades() {
-        RaioXProperties props = new RaioXProperties(ACCOUNT, null, null, null);
+        RaioXProperties props = new RaioXProperties(ACCOUNT, null, null, null, null);
 
         assertThat(props.resolvedOutput()).isEqualTo("../../docs/fase0/raio-x-34839344.md");
         assertThat(props.parseLimit()).isEqualTo(20);
