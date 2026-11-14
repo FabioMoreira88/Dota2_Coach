@@ -1,16 +1,20 @@
 package com.dota2coach.analysis.metric;
 
 import com.dota2coach.analysis.metric.ProfileXRay.Fundamentals;
+import com.dota2coach.analysis.metric.ProfileXRay.HeroBenchmarkLine;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
 import com.dota2coach.analysis.metric.ProfileXRay.LaneLine;
+import com.dota2coach.analysis.metric.ProfileXRay.MetricComparison;
 import com.dota2coach.analysis.metric.ProfileXRay.Overview;
 import com.dota2coach.analysis.metric.ProfileXRay.StatBlock;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
+import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.HeroMeta.PickWin;
@@ -85,6 +89,7 @@ public class XRayCalculator {
                 lanes(recent),
                 laneCoverage(recent),
                 fundamentals(recent),
+                benchmarks(snapshot, recent, heroes),
                 items(snapshot, all, heroes),
                 shareOnWinningMetaHeroes(recent, meta));
     }
@@ -177,6 +182,37 @@ public class XRayCalculator {
                 average(matches, MatchRecord::kda),
                 average(matches, m -> perMinute(m.heroDamage(), m)),
                 average(matches, MatchRecord::durationMinutes));
+    }
+
+    static List<HeroBenchmarkLine> benchmarks(
+            ProfileSnapshot snapshot, List<MatchRecord> recent, List<HeroLine> heroes) {
+        return heroes.stream()
+                .filter(h -> h.recent().games() >= POOL_MIN_GAMES && snapshot.benchmarks().containsKey(h.heroId()))
+                .limit(ITEM_HEROES)
+                .map(h -> benchmarkLine(snapshot.benchmarks().get(h.heroId()), h,
+                        recent.stream().filter(m -> m.heroId() == h.heroId()).toList()))
+                .filter(line -> !line.metrics().isEmpty())
+                .toList();
+    }
+
+    static HeroBenchmarkLine benchmarkLine(HeroBenchmark benchmark, HeroLine hero, List<MatchRecord> games) {
+        Map<BenchmarkMetric, MetricComparison> metrics = new EnumMap<>(BenchmarkMetric.class);
+        for (BenchmarkMetric metric : BenchmarkMetric.values()) {
+            double value = average(games, m -> metricValue(metric, m));
+            benchmark.percentileOf(metric, value)
+                    .ifPresent(p -> metrics.put(metric, new MetricComparison(value, p)));
+        }
+        return new HeroBenchmarkLine(hero.heroId(), hero.name(), games.size(), metrics);
+    }
+
+    static double metricValue(BenchmarkMetric metric, MatchRecord m) {
+        return switch (metric) {
+            case GOLD_PER_MIN -> m.goldPerMin();
+            case XP_PER_MIN -> m.xpPerMin();
+            case LAST_HITS_PER_MIN -> perMinute(m.lastHits(), m);
+            case HERO_DAMAGE_PER_MIN -> perMinute(m.heroDamage(), m);
+            case DEATHS_PER_MIN -> perMinute(m.deaths(), m);
+        };
     }
 
     private static List<HeroItems> items(ProfileSnapshot snapshot, List<MatchRecord> all, List<HeroLine> heroes) {

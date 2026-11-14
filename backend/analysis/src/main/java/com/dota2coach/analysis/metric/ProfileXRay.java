@@ -1,10 +1,12 @@
 package com.dota2coach.analysis.metric;
 
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Resultado do Raio-X do perfil: números calculados, sem texto de recomendação.
@@ -27,12 +29,14 @@ public record ProfileXRay(
         List<LaneLine> lanes,
         double laneCoverage,
         Fundamentals fundamentals,
+        List<HeroBenchmarkLine> benchmarks,
         List<HeroItems> items,
         double shareOnWinningMetaHeroes) {
 
     public ProfileXRay {
         heroes = List.copyOf(heroes);
         lanes = List.copyOf(lanes);
+        benchmarks = List.copyOf(benchmarks);
         items = List.copyOf(items);
     }
 
@@ -72,6 +76,25 @@ public record ProfileXRay(
 
     public record LaneLine(Lane lane, WinLoss result) {}
 
+
+    /**
+     * Médias do jogador com um herói nas partidas recentes, comparadas com todas as partidas públicas do herói.
+     *
+     * @param metrics só as métricas para as quais a OpenDota tem dados
+     */
+    public record HeroBenchmarkLine(int heroId, String name, int games, Map<BenchmarkMetric, MetricComparison> metrics) {
+
+        public HeroBenchmarkLine {
+            metrics = Map.copyOf(metrics);
+        }
+    }
+
+    /**
+     * @param playerValue média do jogador
+     * @param percentile fração (0 a 1) das partidas públicas do herói com valor menor ou igual; 0 e 1 indicam fora
+     *     da faixa publicada (abaixo de 10% ou acima de 99%)
+     */
+    public record MetricComparison(double playerValue, double percentile) {}
 
     /** Médias das últimas partidas comparadas com as anteriores do recorte recente. */
     public record Fundamentals(StatBlock latest, StatBlock previous) {}

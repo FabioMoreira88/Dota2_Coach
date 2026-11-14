@@ -11,6 +11,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
 import com.dota2coach.collector.config.OpenDotaProperties;
 import com.dota2coach.collector.support.RequestRateLimiter;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.Lane;
@@ -71,6 +72,8 @@ class ProfileSnapshotServiceTest {
         respond("/heroStats", "hero-stats.json");
         respond("/heroes/35/itemPopularity", "item-popularity.json");
         respond("/heroes/84/itemPopularity", "item-popularity.json");
+        respond("/benchmarks?hero_id=35", "benchmarks.json");
+        respond("/benchmarks?hero_id=84", "benchmarks.json");
 
         ProfileSnapshot snapshot = service.collect(ACCOUNT);
 
@@ -83,6 +86,12 @@ class ProfileSnapshotServiceTest {
         assertThat(snapshot.heroMeta().get(35).in(RankBracket.LEGEND).picks()).isEqualTo(5000);
         assertThat(snapshot.itemPopularity()).containsOnlyKeys(35, 84);
         assertThat(snapshot.itemPopularity().get(35).top(GamePhase.START, 1)).containsExactly(44);
+        assertThat(snapshot.benchmarks()).containsOnlyKeys(35, 84);
+        assertThat(snapshot.benchmarks().get(35).byMetric())
+                .as("métrica vazia e sem valor ficam de fora; kills não é usada")
+                .containsOnlyKeys(BenchmarkMetric.GOLD_PER_MIN, BenchmarkMetric.XP_PER_MIN,
+                        BenchmarkMetric.LAST_HITS_PER_MIN, BenchmarkMetric.DEATHS_PER_MIN);
+        assertThat(snapshot.benchmarks().get(35).byMetric().get(BenchmarkMetric.DEATHS_PER_MIN)).hasSize(1);
         assertThat(snapshot.collectedAt()).isEqualTo(NOW);
         server.verify();
     }

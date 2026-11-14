@@ -1,11 +1,13 @@
 package com.dota2coach.analysis.support;
 
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.RankBracket;
 import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.Hero;
+import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.HeroMeta.PickWin;
@@ -78,12 +80,21 @@ public final class Snapshots {
                 GamePhase.LATE, Map.of(HYPERSTONE, 500, BKB, 400, DESOLATOR, 300))));
     }
 
+    /** Sniper com curvas simples: ouro/min 300 (p10) a 700 (p90); mortes/min 0,05 (p10) a 0,25 (p90). */
+    public static Map<Integer, HeroBenchmark> benchmarks() {
+        return Map.of(SNIPER, new HeroBenchmark(SNIPER, Map.of(
+                BenchmarkMetric.GOLD_PER_MIN, List.of(new HeroBenchmark.Point(0.1, 300), new HeroBenchmark.Point(0.5, 450),
+                        new HeroBenchmark.Point(0.9, 700)),
+                BenchmarkMetric.DEATHS_PER_MIN, List.of(new HeroBenchmark.Point(0.1, 0.05),
+                        new HeroBenchmark.Point(0.9, 0.25)))));
+    }
+
     public static PlayerSummary player(Integer rankTier) {
         return new PlayerSummary(SteamId.fromAccountId(34839344L), "Heisenberg", null, rankTier, 0, 0, List.of());
     }
 
     public static ProfileSnapshot snapshot(Integer rankTier, List<MatchRecord> matches) {
-        return new ProfileSnapshot(player(rankTier), matches, heroes(), items(), meta(), popularity(), NOW);
+        return new ProfileSnapshot(player(rankTier), matches, heroes(), items(), meta(), popularity(), benchmarks(), NOW);
     }
 
     /** Partida padrão de 40 minutos, {@code daysAgo} dias antes de {@link #NOW}. */

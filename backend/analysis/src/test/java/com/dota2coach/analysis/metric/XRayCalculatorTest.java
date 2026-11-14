@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.within;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
@@ -88,6 +89,21 @@ class XRayCalculatorTest {
         assertThat(x.laneCoverage()).isEqualTo(0.10);
         assertThat(x.lanes()).extracting(l -> l.lane()).containsExactly(Lane.SAFE_LANE, Lane.OFF_LANE);
         assertThat(x.lanes().get(0).result().games()).as("Sniper e Axe na segura").isEqualTo(8);
+    }
+
+    @Test
+    void comparaAMediaDoJogadorComOsPercentisDoHeroi() {
+        ProfileXRay x = calculator.calculate(snapshot(53, history()));
+
+        assertThat(x.benchmarks()).as("só o Sniper tem curva nos dados de teste").hasSize(1);
+        var sniper = x.benchmarks().get(0);
+        assertThat(sniper.name()).isEqualTo("Sniper");
+        assertThat(sniper.games()).isEqualTo(74);
+        assertThat(sniper.metrics()).containsOnlyKeys(BenchmarkMetric.GOLD_PER_MIN, BenchmarkMetric.DEATHS_PER_MIN);
+        assertThat(sniper.metrics().get(BenchmarkMetric.GOLD_PER_MIN).playerValue()).isEqualTo(500.0);
+        assertThat(sniper.metrics().get(BenchmarkMetric.GOLD_PER_MIN).percentile()).isCloseTo(0.58, within(1e-9));
+        assertThat(sniper.metrics().get(BenchmarkMetric.DEATHS_PER_MIN).playerValue()).isEqualTo(0.1);
+        assertThat(sniper.metrics().get(BenchmarkMetric.DEATHS_PER_MIN).percentile()).isCloseTo(0.3, within(1e-9));
     }
 
     @Test

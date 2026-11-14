@@ -1,17 +1,21 @@
 package com.dota2coach.collector.mapper;
 
+import com.dota2coach.collector.dto.opendota.OpenDotaBenchmarksResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.RankBracket;
 import com.dota2coach.core.model.Hero;
+import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.HeroMeta.PickWin;
 import com.dota2coach.core.model.Item;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -75,5 +79,27 @@ public final class OpenDotaReferenceMapper {
         if (items != null) {
             byPhase.put(phase, items);
         }
+    }
+
+    /** Métricas sem dados ou pontos sem valor são ignorados. */
+    public static HeroBenchmark toHeroBenchmark(int heroId, OpenDotaBenchmarksResponse r) {
+        Map<BenchmarkMetric, List<HeroBenchmark.Point>> byMetric = new EnumMap<>(BenchmarkMetric.class);
+        if (r != null && r.result() != null) {
+            for (BenchmarkMetric metric : BenchmarkMetric.values()) {
+                List<OpenDotaBenchmarksResponse.Point> points = r.result().get(metric.openDotaKey());
+                if (points == null) {
+                    continue;
+                }
+                List<HeroBenchmark.Point> mapped = points.stream()
+                        .filter(Objects::nonNull)
+                        .filter(p -> p.value() != null)
+                        .map(p -> new HeroBenchmark.Point(p.percentile(), p.value()))
+                        .toList();
+                if (!mapped.isEmpty()) {
+                    byMetric.put(metric, mapped);
+                }
+            }
+        }
+        return new HeroBenchmark(heroId, byMetric);
     }
 }
