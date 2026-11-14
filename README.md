@@ -71,7 +71,9 @@ também traz a linha do tempo de objetivos (torres, barracks, Roshan, first bloo
 ouro, com quem morreu e se você estava nelas, e os itens principais dos dez jogadores, com os itens populares de
 cada herói que ficaram de fora. O draft mostra a posição de cada jogador: a sua é a informada, e a dos outros
 é estimada pela rota e pelo patrimônio. Os seus itens e os do adversário direto (o da posição que você
-enfrenta) são comparados com o tempo em que o herói costuma terminá-los. Precisa do banco no ar. Na pasta `backend`:
+enfrenta) são comparados com o tempo em que o herói costuma terminá-los. Também saem de quem veio o dano que
+você recebeu, o uso de itens e habilidades, de onde veio seu ouro e XP, visão e mapa (wards destruídas, runas,
+stacks) e os momentos para rever no replay. Precisa do banco no ar. Na pasta `backend`:
 
 ```
 ./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.partida.match-id=9083198111 --dota2coach.partida.account-id=34839344 --dota2coach.partida.position=mid"

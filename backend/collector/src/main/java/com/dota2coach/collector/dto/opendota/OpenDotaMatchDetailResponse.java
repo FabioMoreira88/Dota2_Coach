@@ -34,6 +34,11 @@ public record OpenDotaMatchDetailResponse(
      * @param damageInflictor dano causado em heróis por origem: nome da habilidade, do item, ou "null" para
      *     ataque básico
      * @param damageInflictorReceived dano recebido de heróis, pela mesma origem
+     * @param damageTaken dano recebido por quem causou, pelo nome interno da unidade (herói, creep, torre)
+     * @param goldReasons ouro por motivo, pelo código da Valve
+     * @param xpReasons XP por motivo, pelo código da Valve
+     * @param runes runas pegas por tipo, pelo código da Valve
+     * @param stuns segundos de stun causados em heróis
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Player(
@@ -68,7 +73,17 @@ public record OpenDotaMatchDetailResponse(
             @JsonProperty("lane_efficiency_pct") Integer laneEfficiencyPct,
             @JsonProperty("benchmarks") Map<String, Benchmark> benchmarks,
             @JsonProperty("damage_inflictor") Map<String, Long> damageInflictor,
-            @JsonProperty("damage_inflictor_received") Map<String, Long> damageInflictorReceived) {}
+            @JsonProperty("damage_inflictor_received") Map<String, Long> damageInflictorReceived,
+            @JsonProperty("damage_taken") Map<String, Long> damageTaken,
+            @JsonProperty("ability_uses") Map<String, Long> abilityUses,
+            @JsonProperty("item_uses") Map<String, Long> itemUses,
+            @JsonProperty("stuns") Double stuns,
+            @JsonProperty("gold_reasons") Map<String, Long> goldReasons,
+            @JsonProperty("xp_reasons") Map<String, Long> xpReasons,
+            @JsonProperty("runes") Map<String, Long> runes,
+            @JsonProperty("camps_stacked") Integer campsStacked,
+            @JsonProperty("observer_kills") Integer observerKills,
+            @JsonProperty("sentry_kills") Integer sentryKills) {}
 
     /** Pick ou ban da Valve. {@code team} 0 é Radiant e 1 é Dire; {@code order} começa em 0. */
     @JsonIgnoreProperties(ignoreUnknown = true)

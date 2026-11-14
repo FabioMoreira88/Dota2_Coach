@@ -24,6 +24,7 @@ import java.util.Map;
  *     analisado)
  * @param itemTimings seus itens principais e os do adversário direto, comparados com quando os heróis costumam
  *     terminá-los (vazio sem replay analisado)
+ * @param play de quem veio o dano, uso de itens e habilidades, fontes de ouro e XP, visão e mapa
  */
 public record MatchAnalysis(
         long matchId,
@@ -51,7 +52,8 @@ public record MatchAnalysis(
         Context context,
         Timeline timeline,
         List<PlayerItems> playersItems,
-        List<ItemTimingLine> itemTimings) {
+        List<ItemTimingLine> itemTimings,
+        PlayDetails play) {
 
     public MatchAnalysis {
         percentiles = Map.copyOf(percentiles);
@@ -227,17 +229,22 @@ public record MatchAnalysis(
      * @param fightsWithYou lutas em que você causou dano, curou ou morreu
      * @param fightsWonByGold lutas em que seu time ganhou mais ouro que o adversário
      * @param biggestFights as lutas que mais mexeram no ouro, em ordem de tempo
+     * @param replayMoments trechos para rever no replay, em ordem de tempo
      */
     public record Timeline(List<ObjectiveLine> objectives, int fightsTotal, int fightsWithYou, int fightsWonByGold,
-            List<FightLine> biggestFights) {
+            List<FightLine> biggestFights, List<ReplayMoment> replayMoments) {
 
-        public static final Timeline EMPTY = new Timeline(List.of(), 0, 0, 0, List.of());
+        public static final Timeline EMPTY = new Timeline(List.of(), 0, 0, 0, List.of(), List.of());
 
         public Timeline {
             objectives = List.copyOf(objectives);
             biggestFights = List.copyOf(biggestFights);
+            replayMoments = List.copyOf(replayMoments);
         }
     }
+
+    /** Trecho da partida para rever no replay, em segundos de jogo, e por quê. */
+    public record ReplayMoment(int fromSeconds, int toSeconds, String reason) {}
 
     /**
      * @param event o que aconteceu, para vir depois de quem fez (ex.: "derrubou a torre T1 do meio")
@@ -292,4 +299,54 @@ public record MatchAnalysis(
      */
     public record ItemTimingLine(String heroName, boolean you, String itemName, int timeSeconds, String usualRange,
             String comparison, Double winRate) {}
+
+    /**
+     * Detalhes do jogo do jogador que só o replay analisado tem.
+     *
+     * @param damageFromHeroes dano recebido de cada herói adversário, do maior para o menor, com a fração do dano
+     *     total recebido
+     * @param damageFromOthersShare fração do dano total recebido que veio de creeps, torres e Roshan
+     * @param goldLostOnDeaths ouro perdido ao morrer
+     * @param goldOnBuybacks ouro gasto em buyback
+     * @param goldSources de onde veio o ouro ganho, do maior para o menor
+     * @param xpSources de onde veio o XP, do maior para o menor
+     * @param itemUses itens ativados, do mais usado para o menos usado
+     * @param abilityUses habilidades usadas, da mais usada para a menos usada
+     * @param stunSeconds tempo total de stun causado em heróis
+     * @param runes runas pegas por tipo
+     */
+    public record PlayDetails(
+            List<DamageFrom> damageFromHeroes,
+            double damageFromOthersShare,
+            long goldLostOnDeaths,
+            long goldOnBuybacks,
+            List<Share> goldSources,
+            List<Share> xpSources,
+            List<Use> itemUses,
+            List<Use> abilityUses,
+            double stunSeconds,
+            int observerKills,
+            int sentryKills,
+            int campsStacked,
+            List<Use> runes) {
+
+        public static final PlayDetails EMPTY = new PlayDetails(List.of(), 0, 0, 0, List.of(), List.of(), List.of(),
+                List.of(), 0, 0, 0, 0, List.of());
+
+        public PlayDetails {
+            damageFromHeroes = List.copyOf(damageFromHeroes);
+            goldSources = List.copyOf(goldSources);
+            xpSources = List.copyOf(xpSources);
+            itemUses = List.copyOf(itemUses);
+            abilityUses = List.copyOf(abilityUses);
+            runes = List.copyOf(runes);
+        }
+    }
+
+    public record DamageFrom(String heroName, long damage, double share) {}
+
+    /** Parte de um total, com a fração de 0 a 1. */
+    public record Share(String label, long value, double share) {}
+
+    public record Use(String name, long count) {}
 }

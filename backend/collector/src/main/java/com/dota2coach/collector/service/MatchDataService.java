@@ -1,6 +1,7 @@
 package com.dota2coach.collector.service;
 
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
+import com.dota2coach.collector.dto.opendota.OpenDotaAbilityConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
 import com.dota2coach.collector.mapper.OpenDotaMatchMapper;
 import com.dota2coach.collector.mapper.OpenDotaReferenceMapper;
@@ -11,6 +12,7 @@ import com.dota2coach.core.model.HeroDurations;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroItemTimings;
 import com.dota2coach.core.model.HeroMatchups;
+import com.dota2coach.core.model.Item;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchSnapshot;
 import java.util.Collection;
@@ -48,15 +50,20 @@ public class MatchDataService {
                 .collect(Collectors.toMap(OpenDotaHeroConstant::name, OpenDotaHeroConstant::id, (a, b) -> a));
         Optional<AnalyzedMatch> match =
                 OpenDotaMatchMapper.toAnalyzedMatch(openDotaClient.getMatch(matchId), heroIdByName);
-        return match.map(m -> new MatchSnapshot(
-                m,
-                OpenDotaReferenceMapper.toHeroes(heroes),
-                OpenDotaReferenceMapper.toItems(openDotaClient.getItemConstants()),
-                damageTypes(),
-                heroDurations(m),
-                matchups(m, accountId),
-                itemPopularity(m),
-                itemTimings(m, accountId)));
+        return match.map(m -> {
+            Map<Integer, Item> items = OpenDotaReferenceMapper.toItems(openDotaClient.getItemConstants());
+            Map<String, OpenDotaAbilityConstant> abilities = abilities();
+            return new MatchSnapshot(
+                    m,
+                    OpenDotaReferenceMapper.toHeroes(heroes),
+                    items,
+                    OpenDotaReferenceMapper.toDamageTypes(abilities),
+                    heroDurations(m),
+                    matchups(m, accountId),
+                    itemPopularity(m),
+                    itemTimings(m, accountId),
+                    OpenDotaReferenceMapper.toAbilityNames(abilities));
+        });
     }
 
     /** Matchups do herói do jogador. Se a conta não está na partida ou a OpenDota falha, sai vazio. */
@@ -73,10 +80,13 @@ public class MatchDataService {
         }
     }
 
-    /** Tipo de dano das habilidades. Se a OpenDota falhar, o perfil de dano sai só com ataque básico e "outro". */
-    private Map<String, DamageType> damageTypes() {
+    /**
+     * Habilidades do jogo, para o tipo de dano e o nome de exibição. Se a OpenDota falhar, o perfil de dano sai só
+     * com ataque básico e "outro", e as habilidades aparecem pelo nome interno.
+     */
+    private Map<String, OpenDotaAbilityConstant> abilities() {
         try {
-            return OpenDotaReferenceMapper.toDamageTypes(openDotaClient.getAbilityConstants());
+            return openDotaClient.getAbilityConstants();
         } catch (ExternalServiceUnavailableException e) {
             log.warn("OpenDota: não foi possível buscar as habilidades; o perfil de dano fica incompleto: {}",
                     e.getMessage());

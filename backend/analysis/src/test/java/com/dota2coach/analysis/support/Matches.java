@@ -22,6 +22,8 @@ public final class Matches {
 
     public static final long ACCOUNT = 34839344L;
     public static final long MATCH_ID = 9083198111L;
+    /** Pickado pelo Dire, mas o jogador trocou de herói: não está entre os jogadores. */
+    static final int JUGGERNAUT = 8;
 
     private Matches() {}
 
@@ -44,7 +46,8 @@ public final class Matches {
                 List.of(), parsed ? 1 : 0, parsed ? 2 : 0, parsed ? 72 : null,
                 parsed ? Map.of(BenchmarkMetric.GOLD_PER_MIN, 0.66) : Map.of(), parsed ? 0.4 : null,
                 parsed ? Map.of("null", 15000L, "sniper_shrapnel", 5000L, "sniper_assassinate", 5000L) : Map.of(),
-                parsed ? Map.of("null", 3000L, "axe_counter_helix", 2000L) : Map.of());
+                parsed ? Map.of("null", 3000L, "axe_counter_helix", 2000L) : Map.of(),
+                parsed ? stats() : MatchPlayer.ReplayStats.EMPTY);
         MatchPlayer ally = new MatchPlayer(1, null, Snapshots.OGRE, Side.RADIANT, Lane.SAFE_LANE, 1,
                 12, 9, 10, 40, 1, 250, 300, 8000, 0, 2000, 6000, 16,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), 0, 0, null, Map.of(), null,
@@ -61,12 +64,14 @@ public final class Matches {
                 GameMode.ALL_PICK, true, parsed, goldAdv,
                 List.of(new AnalyzedMatch.DraftPick(1, Snapshots.AXE, Side.DIRE),
                         new AnalyzedMatch.DraftPick(2, Snapshots.OGRE, Side.RADIANT),
-                        new AnalyzedMatch.DraftPick(3, Snapshots.SNIPER, Side.RADIANT)),
+                        new AnalyzedMatch.DraftPick(3, JUGGERNAUT, Side.DIRE),
+                        new AnalyzedMatch.DraftPick(4, Snapshots.SNIPER, Side.RADIANT)),
                 List.of(me, ally, rival), parsed ? objectives() : List.of(), parsed ? teamfights() : List.of());
         return new MatchSnapshot(match, Snapshots.heroes(), Snapshots.items(), damageTypes(), durations(),
                 new HeroMatchups(Snapshots.SNIPER, Map.of(Snapshots.AXE, new HeroMatchups.Record(1000, 470),
                         Snapshots.OGRE, new HeroMatchups.Record(5, 5))),
-                parsed ? Snapshots.popularity() : Map.of(), parsed ? itemTimings() : Map.of());
+                parsed ? Snapshots.popularity() : Map.of(), parsed ? itemTimings() : Map.of(),
+                Map.of("sniper_shrapnel", "Shrapnel"));
     }
 
     /** First blood do Dire, uma T1 de cada lado, Roshan do Dire e um barracks do Radiant caindo. */
@@ -113,6 +118,18 @@ public final class Matches {
                         new HeroItemTimings.Bin(720, 97, 55), new HeroItemTimings.Bin(900, 286, 147),
                         new HeroItemTimings.Bin(1200, 186, 93), new HeroItemTimings.Bin(1500, 58, 28),
                         new HeroItemTimings.Bin(1800, 22, 8)))));
+    }
+
+    /**
+     * Sniper recebeu 3000 do Axe e 1000 de creeps e torres; farm de 60% em creeps de rota; perdeu 500 de ouro
+     * ao morrer e gastou 300 em buyback.
+     */
+    static MatchPlayer.ReplayStats stats() {
+        return new MatchPlayer.ReplayStats(Map.of(Snapshots.AXE, 3000L), 1000,
+                Map.of("sniper_shrapnel", 10L, "sniper_assassinate", 4L),
+                Map.of("black_king_bar", 2L, "tpscroll", 3L, "power_treads", 0L), 3.5,
+                Map.of(13, 6000L, 12, 2000L, 14, 2000L, 1, -500L, 2, -300L, 6, 400L),
+                Map.of(2, 8000L, 1, 2000L), Map.of(5, 3L, 0, 1L), 2, 1, 0);
     }
 
     static Map<String, DamageType> damageTypes() {

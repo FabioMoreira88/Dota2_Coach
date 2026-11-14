@@ -303,7 +303,47 @@ public final class OpenDotaMatchMapper {
                 percentiles,
                 lastHitsAt10Percentile,
                 orEmpty(p.damageInflictor()),
-                orEmpty(p.damageInflictorReceived()));
+                orEmpty(p.damageInflictorReceived()),
+                parsed ? replayStats(p, heroIdByName) : MatchPlayer.ReplayStats.EMPTY);
+    }
+
+    private static MatchPlayer.ReplayStats replayStats(OpenDotaMatchDetailResponse.Player p,
+            Map<String, Integer> heroIdByName) {
+        Map<Integer, Long> fromHeroes = new HashMap<>();
+        long fromOthers = 0;
+        for (var e : orEmpty(p.damageTaken()).entrySet()) {
+            Integer heroId = heroIdByName.get(e.getKey());
+            if (heroId != null) {
+                fromHeroes.merge(heroId, e.getValue(), Long::sum);
+            } else if (e.getKey() == null || !e.getKey().startsWith("npc_dota_hero_")) {
+                fromOthers += e.getValue();
+            }
+        }
+        return new MatchPlayer.ReplayStats(
+                fromHeroes,
+                fromOthers,
+                orEmpty(p.abilityUses()),
+                orEmpty(p.itemUses()),
+                p.stuns() == null ? 0 : p.stuns(),
+                byCode(p.goldReasons()),
+                byCode(p.xpReasons()),
+                byCode(p.runes()),
+                orZero(p.campsStacked()),
+                orZero(p.observerKills()),
+                orZero(p.sentryKills()));
+    }
+
+    /** Mapa com chave numérica em texto (código da Valve); chaves que não são número ficam de fora. */
+    private static Map<Integer, Long> byCode(Map<String, Long> raw) {
+        Map<Integer, Long> codes = new HashMap<>();
+        orEmpty(raw).forEach((k, v) -> {
+            try {
+                codes.merge(Integer.parseInt(k), v, Long::sum);
+            } catch (NumberFormatException ignored) {
+                // código desconhecido
+            }
+        });
+        return codes;
     }
 
     /**

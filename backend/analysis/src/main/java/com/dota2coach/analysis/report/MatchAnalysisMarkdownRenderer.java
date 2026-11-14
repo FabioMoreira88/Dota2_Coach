@@ -7,6 +7,7 @@ import static com.dota2coach.analysis.report.XRayMarkdownRenderer.percentile;
 
 import com.dota2coach.analysis.metric.MatchAnalysis;
 import com.dota2coach.analysis.metric.MatchAnalysis.Context;
+import com.dota2coach.analysis.metric.MatchAnalysis.DamageFrom;
 import com.dota2coach.analysis.metric.MatchAnalysis.DamageShare;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathPhaseLine;
@@ -19,11 +20,15 @@ import com.dota2coach.analysis.metric.MatchAnalysis.Line;
 import com.dota2coach.analysis.metric.MatchAnalysis.Matchup;
 import com.dota2coach.analysis.metric.MatchAnalysis.ObjectiveLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.PhasePower;
+import com.dota2coach.analysis.metric.MatchAnalysis.PlayDetails;
 import com.dota2coach.analysis.metric.MatchAnalysis.Pick;
 import com.dota2coach.analysis.metric.MatchAnalysis.PlayerItems;
+import com.dota2coach.analysis.metric.MatchAnalysis.ReplayMoment;
+import com.dota2coach.analysis.metric.MatchAnalysis.Share;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamProfile;
 import com.dota2coach.analysis.metric.MatchAnalysis.Timeline;
+import com.dota2coach.analysis.metric.MatchAnalysis.Use;
 import com.dota2coach.analysis.metric.MatchAnalysis.Usual;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
@@ -59,14 +64,18 @@ public class MatchAnalysisMarkdownRenderer {
         }
         percentiles(md, a);
         laning(md, a);
+        farmSources(md, a);
         deaths(md, a);
+        damageTaken(md, a);
         items(md, a);
+        uses(md, a);
         playersItems(md, a);
         itemTimings(md, a);
         vision(md, a);
         teamGold(md, a);
         objectives(md, a);
         fights(md, a);
+        replayMoments(md, a);
         return md.toString();
     }
 
@@ -401,9 +410,83 @@ public class MatchAnalysisMarkdownRenderer {
     }
 
     private static void vision(StringBuilder md, MatchAnalysis a) {
-        md.append("## Visão\n\n");
-        md.append("Wards colocadas: ").append(a.observersPlaced()).append(" observer e ").append(a.sentriesPlaced())
-                .append(" sentry.\n\n");
+        PlayDetails p = a.play();
+        md.append("## Visão e mapa\n\n");
+        md.append("- Wards colocadas: ").append(a.observersPlaced()).append(" observer e ").append(a.sentriesPlaced())
+                .append(" sentry.\n");
+        md.append("- Wards adversárias destruídas: ").append(p.observerKills()).append(" observer e ")
+                .append(p.sentryKills()).append(" sentry.\n");
+        md.append("- Runas pegas: ").append(p.runes().isEmpty() ? "nenhuma"
+                : p.runes().stream().map(r -> r.name() + " " + r.count()).collect(Collectors.joining(", ")))
+                .append(".\n");
+        md.append("- Camps de neutros stackados: ").append(p.campsStacked()).append(".\n\n");
+    }
+
+    private static void farmSources(StringBuilder md, MatchAnalysis a) {
+        PlayDetails p = a.play();
+        if (p.goldSources().isEmpty() && p.xpSources().isEmpty()) {
+            return;
+        }
+        md.append("## De onde veio seu ouro e XP\n\n");
+        if (!p.goldSources().isEmpty()) {
+            md.append("- Ouro: ").append(shares(p.goldSources())).append(".\n");
+        }
+        if (!p.xpSources().isEmpty()) {
+            md.append("- XP: ").append(shares(p.xpSources())).append(".\n");
+        }
+        md.append('\n');
+    }
+
+    private static String shares(List<Share> shares) {
+        return shares.stream().map(s -> s.label() + " " + pct(s.share()) + " (" + s.value() + ")")
+                .collect(Collectors.joining(", "));
+    }
+
+    private static void damageTaken(StringBuilder md, MatchAnalysis a) {
+        PlayDetails p = a.play();
+        if (p.damageFromHeroes().isEmpty()) {
+            return;
+        }
+        md.append("## De quem veio o dano que você recebeu\n\n");
+        md.append("| Origem | Dano | Parte do total |\n|---|---:|---:|\n");
+        for (DamageFrom d : p.damageFromHeroes()) {
+            md.append("| ").append(escape(d.heroName())).append(" | ").append(d.damage()).append(" | ")
+                    .append(pct(d.share())).append(" |\n");
+        }
+        md.append("| Creeps, torres e Roshan | – | ").append(pct(p.damageFromOthersShare())).append(" |\n\n");
+        md.append("Ouro perdido ao morrer: ").append(p.goldLostOnDeaths()).append(". Ouro gasto em buyback: ")
+                .append(p.goldOnBuybacks()).append(".\n\n");
+    }
+
+    private static void uses(StringBuilder md, MatchAnalysis a) {
+        PlayDetails p = a.play();
+        if (p.itemUses().isEmpty() && p.abilityUses().isEmpty() && p.stunSeconds() == 0) {
+            return;
+        }
+        md.append("## Uso de itens e habilidades\n\n");
+        if (!p.abilityUses().isEmpty()) {
+            md.append("- Habilidades: ").append(useList(p.abilityUses())).append(".\n");
+        }
+        if (!p.itemUses().isEmpty()) {
+            md.append("- Itens ativados: ").append(useList(p.itemUses())).append(".\n");
+        }
+        md.append("- Stun causado em heróis: ").append(dec(p.stunSeconds())).append(" s.\n\n");
+    }
+
+    private static String useList(List<Use> uses) {
+        return uses.stream().map(u -> escape(u.name()) + " " + u.count() + "x").collect(Collectors.joining(", "));
+    }
+
+    private static void replayMoments(StringBuilder md, MatchAnalysis a) {
+        if (a.timeline().replayMoments().isEmpty()) {
+            return;
+        }
+        md.append("## Momentos para rever no replay\n\n");
+        for (ReplayMoment m : a.timeline().replayMoments()) {
+            md.append("- **").append(clock(m.fromSeconds())).append(" a ").append(clock(m.toSeconds()))
+                    .append(":** ").append(escape(m.reason())).append(".\n");
+        }
+        md.append('\n');
     }
 
     private static void teamGold(StringBuilder md, MatchAnalysis a) {

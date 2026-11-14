@@ -3,6 +3,10 @@
  "radiant_gold_adv":[0,100,200,300,400,500,600,700,800,900,1000,900,800,700,600,500,400,300,200,100,-1500],
  "players":[
   {"player_slot":1,"account_id":34839344,"hero_id":14,"isRadiant":true,"lane":2,"lane_role":2,"is_roaming":false,
+   "damage_taken":{"npc_dota_hero_invoker":3000,"npc_dota_creep_badguys_melee":500,"npc_dota_hero_desconhecido":10},
+   "ability_uses":{"pudge_meat_hook":20},"item_uses":{"blink":5},"stuns":2.5,"camps_stacked":1,
+   "observer_kills":2,"sentry_kills":0,"gold_reasons":{"13":5000,"1":-400,"abc":3},"xp_reasons":{"2":7000},
+   "runes":{"5":2},
    "kills":7,"deaths":2,"assists":5,"last_hits":250,"denies":12,"gold_per_min":520,"xp_per_min":610,
    "hero_damage":21000,"tower_damage":3000,"hero_healing":0,"net_worth":19000,"level":24,
    "lh_t":[0,4,8,12,16,20,24,28,32,36,40,44],"dn_t":[0,1,2,3,4,5,5,5,6,6,7,7],

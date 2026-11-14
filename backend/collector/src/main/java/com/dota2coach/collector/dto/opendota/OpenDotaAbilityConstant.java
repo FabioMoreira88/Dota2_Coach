@@ -8,4 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * ("Physical", "Magical", "Pure") às vezes vem como lista, por isso é lido como {@code Object}.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record OpenDotaAbilityConstant(@JsonProperty("dmg_type") Object damageType) {}
+public record OpenDotaAbilityConstant(
+        @JsonProperty("dmg_type") Object damageType,
+        @JsonProperty("dname") String displayName) {}

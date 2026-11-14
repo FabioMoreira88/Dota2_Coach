@@ -25,16 +25,20 @@ final class PositionEstimator {
     /** Posição de quem o jogador enfrenta diretamente: 1 contra 3, 2 contra 2, 4 contra 5. */
     private static final Map<Integer, Integer> COUNTERPART = Map.of(1, 3, 2, 2, 3, 1, 4, 5, 5, 4);
 
+    private static final int CARRY = 1;
+    private static final int HARD_SUPPORT = 5;
+
     private PositionEstimator() {}
 
     /**
      * Se o herói foi jogado numa posição que não combina com as funções oficiais dele: um herói de carry (sem a
-     * função de suporte) de 4 ou 5, ou um suporte (sem a função de carry) de 1.
+     * função de suporte) de 5, ou um suporte (sem a função de carry) de 1. A posição 4 fica de fora porque muitos
+     * heróis listados só como carry são jogados de 4 (Spirit Breaker, por exemplo).
      */
     static boolean unusual(List<String> heroRoles, int position) {
         boolean carry = heroRoles.contains("Carry");
         boolean support = heroRoles.contains("Support");
-        return (position >= 4 && carry && !support) || (position == 1 && support && !carry);
+        return (position == HARD_SUPPORT && carry && !support) || (position == CARRY && support && !carry);
     }
 
     /**
