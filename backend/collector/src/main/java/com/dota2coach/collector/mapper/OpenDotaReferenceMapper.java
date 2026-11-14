@@ -51,7 +51,9 @@ public final class OpenDotaReferenceMapper {
                         e.getKey(),
                         e.getValue().displayName() == null ? e.getKey() : e.getValue().displayName(),
                         e.getValue().cost() == null ? 0 : e.getValue().cost(),
-                        Boolean.TRUE.equals(e.getValue().created())))
+                        Boolean.TRUE.equals(e.getValue().created()),
+                        e.getValue().components() == null ? List.of()
+                                : e.getValue().components().stream().filter(Objects::nonNull).toList()))
                 .collect(Collectors.toMap(Item::id, Function.identity(), (a, b) -> a));
     }
 

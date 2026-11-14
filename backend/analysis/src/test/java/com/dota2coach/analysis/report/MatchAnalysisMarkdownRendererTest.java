@@ -51,8 +51,8 @@ class MatchAnalysisMarkdownRendererTest {
                 "| 30 a 40 min | 45,0% | – |", "| 40 a 50 min | 40,0% | 60,0% |");
         assertThat(md.indexOf("## Contexto da partida")).isLessThan(md.indexOf("## Fase de rotas"));
         assertThat(md).contains("## Itens dos dois times",
-                "| seu | **Sniper (você)** | Power Treads 12:00, Maelstrom 18:00 | Dragon Lance, Black King Bar, "
-                        + "Desolator |",
+                "| seu | **Sniper (você)** | Power Treads 12:00, Maelstrom 18:00, Hurricane Pike 28:20 | "
+                        + "Black King Bar, Desolator |",
                 "| seu | Ogre Magi | nenhum | – |", "| adversário | Axe | nenhum | – |");
         assertThat(md).contains("## Objetivos", "Torres derrubadas: seu time 1, adversário 1.",
                 "| 5:00 | Adversário | tirou o first blood |", "| 11:40 | Seu time | derrubou a torre T1 do meio |",

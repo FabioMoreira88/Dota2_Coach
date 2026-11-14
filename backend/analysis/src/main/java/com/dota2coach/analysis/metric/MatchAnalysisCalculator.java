@@ -15,7 +15,6 @@ import com.dota2coach.core.model.Item;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchSnapshot;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,8 +25,8 @@ import java.util.stream.Collectors;
 public class MatchAnalysisCalculator {
 
     static final int LANING_MINUTE = 10;
-    /** Minutos em que a vantagem de ouro do time aparece no relatório. */
-    static final int[] GOLD_MINUTES = {10, 20, 30, 40};
+    /** A vantagem de ouro do time aparece a cada tantos minutos, até o fim da partida. */
+    static final int GOLD_EVERY_MINUTES = 10;
     /** Rotas físicas da OpenDota que são rotas de verdade (1 embaixo, 2 meio, 3 em cima); 4 e 5 são selva. */
     private static final int LAST_REAL_LANE = 3;
 
@@ -139,11 +138,7 @@ public class MatchAnalysisCalculator {
                         .filter(t -> t.heroName().equals(heroName))
                         .collect(Collectors.toMap(ProfileXRay.ItemTiming::itemName,
                                 ProfileXRay.ItemTiming::medianMinute, (a, b) -> a));
-        Map<String, Integer> first = new LinkedHashMap<>();
-        me.purchases().forEach(p -> first.putIfAbsent(p.itemKey(), p.timeSeconds()));
-        return first.entrySet().stream()
-                .filter(e -> itemsByKey.containsKey(e.getKey()))
-                .filter(e -> XRayCalculator.isCoreItem(itemsByKey.get(e.getKey())))
+        return MatchItemsCalculator.firstCoreItems(me, itemsByKey).entrySet().stream()
                 .map(e -> {
                     String name = itemsByKey.get(e.getKey()).name();
                     return new ItemLine(name, e.getValue(), usual.get(name));
@@ -154,7 +149,8 @@ public class MatchAnalysisCalculator {
     static List<TeamGold> teamGold(AnalyzedMatch match, MatchPlayer me) {
         int sign = me.side() == Side.RADIANT ? 1 : -1;
         List<TeamGold> lines = new ArrayList<>();
-        for (int minute : GOLD_MINUTES) {
+        for (int minute = GOLD_EVERY_MINUTES; minute < match.radiantGoldAdvantage().size();
+                minute += GOLD_EVERY_MINUTES) {
             Integer radiant = MatchPlayer.atMinute(match.radiantGoldAdvantage(), minute);
             if (radiant != null) {
                 lines.add(new TeamGold(minute, sign * radiant));

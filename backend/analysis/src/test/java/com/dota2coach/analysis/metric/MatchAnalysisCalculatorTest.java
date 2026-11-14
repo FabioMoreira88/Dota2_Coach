@@ -43,8 +43,11 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.deathsByPhase()).extracting(DeathPhaseLine::deaths).containsExactly(1, 0, 0, 1);
         assertThat(a.deathsByPhase().get(0).usualPerMatch()).isEqualTo(1.0);
 
-        assertThat(a.items()).as("primeira compra de cada item principal, sem consumíveis")
-                .containsExactly(new ItemLine("Power Treads", 720, 10.0), new ItemLine("Maelstrom", 1080, null));
+        assertThat(a.items())
+                .as("primeira compra de cada item principal, sem consumíveis nem a Dragon Lance comprada no mesmo "
+                        + "segundo da Hurricane Pike")
+                .containsExactly(new ItemLine("Power Treads", 720, 10.0), new ItemLine("Maelstrom", 1080, null),
+                        new ItemLine("Hurricane Pike", 1700, null));
         assertThat(a.observersPlaced()).isEqualTo(1);
         assertThat(a.sentriesPlaced()).isEqualTo(2);
         assertThat(a.teamGold()).containsExactly(new TeamGold(10, 1000), new TeamGold(20, 0),
@@ -146,13 +149,27 @@ class MatchAnalysisCalculatorTest {
                 .as("seu time primeiro, você no topo").containsExactly("Sniper", "Ogre Magi", "Axe");
         MatchAnalysis.PlayerItems me = items.get(0);
         assertThat(me.you()).isTrue();
-        assertThat(me.items()).containsExactly(new MatchAnalysis.ItemTime("Power Treads", 720),
-                new MatchAnalysis.ItemTime("Maelstrom", 1080));
+        assertThat(me.items()).as("a Dragon Lance virou Hurricane Pike no mesmo segundo")
+                .containsExactly(new MatchAnalysis.ItemTime("Power Treads", 720),
+                        new MatchAnalysis.ItemTime("Maelstrom", 1080), new MatchAnalysis.ItemTime("Hurricane Pike", 1700));
         assertThat(me.popularNotBuilt())
-                .as("Tango e Hyperstone não são itens principais; Treads e Maelstrom ele fez")
-                .containsExactly("Dragon Lance", "Black King Bar", "Desolator");
+                .as("Tango e Hyperstone não são itens principais; Treads, Maelstrom e Dragon Lance ele fez")
+                .containsExactly("Black King Bar", "Desolator");
         assertThat(items.get(2).yourTeam()).isFalse();
         assertThat(items.get(2).popularKnown()).as("sem popularidade do Axe").isFalse();
+    }
+
+    @Test
+    void ouroDoTimeACada10MinutosAteOFim() {
+        var base = sniperMid(true).match();
+        var longMatch = new com.dota2coach.core.model.AnalyzedMatch(base.matchId(), base.startTime(),
+                java.time.Duration.ofMinutes(56), base.radiantWin(), base.gameMode(), base.ranked(), true,
+                java.util.stream.IntStream.rangeClosed(0, 56).boxed().toList(), base.picks(), base.players(),
+                List.of(), List.of());
+        var me = longMatch.player(ACCOUNT).orElseThrow();
+
+        assertThat(MatchAnalysisCalculator.teamGold(longMatch, me)).extracting(TeamGold::minute)
+                .containsExactly(10, 20, 30, 40, 50);
     }
 
     @Test
