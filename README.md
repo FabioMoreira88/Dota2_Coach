@@ -64,7 +64,9 @@ uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatóri
 ## Análise de uma partida (linha de comando)
 
 Analisa uma partida escolhida: fase de rotas contra o adversário da sua rota, mortes (quando e para quem), tempo
-dos itens principais, wards e ouro do time, comparando com o seu padrão no último Raio-X salvo. Precisa do banco
+dos itens principais, wards e ouro do time, comparando com o seu padrão no último Raio-X salvo. A seção
+"Contexto da partida" mostra os dois times: ordem dos picks (quando a OpenDota informa), dano físico, mágico e puro
+que cada time causou, funções dos heróis, seu herói contra cada adversário e a força de cada time por duração. Precisa do banco
 no ar. Na pasta `backend`:
 
 ```

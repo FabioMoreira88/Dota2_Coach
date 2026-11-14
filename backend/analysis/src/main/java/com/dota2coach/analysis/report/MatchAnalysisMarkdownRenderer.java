@@ -6,18 +6,25 @@ import static com.dota2coach.analysis.report.XRayMarkdownRenderer.pct;
 import static com.dota2coach.analysis.report.XRayMarkdownRenderer.percentile;
 
 import com.dota2coach.analysis.metric.MatchAnalysis;
+import com.dota2coach.analysis.metric.MatchAnalysis.Context;
+import com.dota2coach.analysis.metric.MatchAnalysis.DamageShare;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.DeathPhaseLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.ItemLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.LaneOpponent;
 import com.dota2coach.analysis.metric.MatchAnalysis.Laning;
 import com.dota2coach.analysis.metric.MatchAnalysis.Line;
+import com.dota2coach.analysis.metric.MatchAnalysis.Matchup;
+import com.dota2coach.analysis.metric.MatchAnalysis.PhasePower;
+import com.dota2coach.analysis.metric.MatchAnalysis.Pick;
 import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
+import com.dota2coach.analysis.metric.MatchAnalysis.TeamProfile;
 import com.dota2coach.analysis.metric.MatchAnalysis.Usual;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 /** Gera o relatório de uma partida escolhida em Markdown, em português. */
 public class MatchAnalysisMarkdownRenderer {
@@ -35,6 +42,7 @@ public class MatchAnalysisMarkdownRenderer {
         StringBuilder md = new StringBuilder();
         header(md, a);
         summary(md, a);
+        context(md, a);
         if (!a.replayParsed()) {
             md.append("## Replay ainda não analisado\n\n")
                     .append("A OpenDota ainda não analisou o replay desta partida, então fase de rotas, mortes, ")
@@ -110,6 +118,95 @@ public class MatchAnalysisMarkdownRenderer {
             md.append(' ').append(usual == null ? NONE : usual).append(" |");
         }
         md.append('\n');
+    }
+
+    private static void context(StringBuilder md, MatchAnalysis a) {
+        Context c = a.context();
+        if (c.teams().isEmpty()) {
+            return;
+        }
+        md.append("## Contexto da partida\n\n");
+        draft(md, c);
+        md.append("### Composição dos times\n\n");
+        TeamProfile yours = c.teams().get(0);
+        TeamProfile enemy = c.teams().get(1);
+        md.append("| | Seu time").append(yours.won() ? " (venceu)" : "").append(" | Time adversário")
+                .append(enemy.won() ? " (venceu)" : "").append(" |\n|---|---|---|\n");
+        md.append("| Heróis | ").append(heroes(yours)).append(" | ").append(heroes(enemy)).append(" |\n");
+        if (yours.damageDealt().total() > 0 || enemy.damageDealt().total() > 0) {
+            md.append("| Dano causado em heróis | ").append(damage(yours.damageDealt())).append(" | ")
+                    .append(damage(enemy.damageDealt())).append(" |\n");
+        }
+        md.append("| Funções dos heróis | ").append(roles(yours)).append(" | ").append(roles(enemy)).append(" |\n\n");
+        if (c.damageReceivedByYou().total() > 0) {
+            md.append("Dano que você recebeu de heróis: ").append(damage(c.damageReceivedByYou())).append(".\n\n");
+        }
+        md.append("Funções são as oficiais de cada herói (não a posição de quem jogou). No dano, ataque básico conta ")
+                .append("como físico, e \"outro\" junta itens e habilidades sem tipo conhecido.\n\n");
+        if (!c.matchups().isEmpty()) {
+            md.append("### Seu herói contra os adversários\n\n");
+            md.append("Taxa de vitória do ").append(escape(a.heroName()))
+                    .append(" contra cada herói em partidas públicas recentes (todas as faixas).\n\n");
+            md.append("| Adversário | Vitórias do ").append(escape(a.heroName())).append(" | Partidas |\n")
+                    .append("|---|---:|---:|\n");
+            for (Matchup m : c.matchups()) {
+                md.append("| ").append(escape(m.heroName())).append(m.laneOpponent() ? " (sua rota)" : "")
+                        .append(" | ").append(pct(m.winRate())).append(" | ").append(m.games()).append(" |\n");
+            }
+            md.append('\n');
+        }
+        if (!c.power().isEmpty()) {
+            md.append("### Força dos times por duração da partida\n\n");
+            md.append("Taxa de vitória média dos 5 heróis de cada time em partidas públicas recentes que duraram ")
+                    .append("esse tempo. Mostra que time tende a ficar mais forte com o passar do jogo.\n\n");
+            md.append("| Duração | Seu time | Time adversário |\n|---|---:|---:|\n");
+            for (PhasePower p : c.power()) {
+                md.append("| ").append(p.phase()).append(" | ").append(p.yourTeam() == null ? NONE : pct(p.yourTeam()))
+                        .append(" | ").append(p.enemyTeam() == null ? NONE : pct(p.enemyTeam())).append(" |\n");
+            }
+            md.append('\n');
+        }
+    }
+
+    private static void draft(StringBuilder md, Context c) {
+        if (!c.pickOrderKnown()) {
+            md.append("A OpenDota não informou a ordem dos picks desta partida.\n\n");
+            return;
+        }
+        md.append("### Draft\n\n");
+        md.append("| Pick | Time | Herói |\n|---:|---|---|\n");
+        for (Pick p : c.picks()) {
+            md.append("| ").append(p.order()).append(" | ").append(p.yourTeam() ? "seu" : "adversário").append(" | ")
+                    .append(p.you() ? "**" + escape(p.heroName()) + " (você)**" : escape(p.heroName()))
+                    .append(" |\n");
+        }
+        md.append('\n');
+        if (c.yourTeamPickNumber() != null) {
+            md.append("Você foi o ").append(c.yourTeamPickNumber()).append("º pick do seu time")
+                    .append(c.yourTeamPickNumber() == 5 ? " (último, já vendo os 5 adversários)" : "")
+                    .append(".\n\n");
+        }
+    }
+
+    private static String heroes(TeamProfile team) {
+        return team.heroes().stream().map(XRayMarkdownRenderer::escape).collect(Collectors.joining(", "));
+    }
+
+    private static String roles(TeamProfile team) {
+        return team.roles().isEmpty() ? NONE
+                : team.roles().stream().map(r -> r.role() + " " + r.heroes()).collect(Collectors.joining(", "));
+    }
+
+    static String damage(DamageShare d) {
+        if (d.total() == 0) {
+            return NONE;
+        }
+        StringBuilder text = new StringBuilder("físico ").append(pct(d.physical())).append(", mágico ")
+                .append(pct(d.magical())).append(", puro ").append(pct(d.pure()));
+        if (d.other() > 0) {
+            text.append(", outro ").append(pct(d.other()));
+        }
+        return text.toString();
     }
 
     private static void percentiles(StringBuilder md, MatchAnalysis a) {

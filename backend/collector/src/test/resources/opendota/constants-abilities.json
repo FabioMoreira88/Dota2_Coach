@@ -1,0 +1,5 @@
+{"pudge_meat_hook":{"dname":"Meat Hook","dmg_type":"Pure"},
+ "invoker_sun_strike":{"dname":"Sun Strike","dmg_type":"Pure"},
+ "pudge_rot":{"dname":"Rot","dmg_type":"Magical"},
+ "antimage_mana_break":{"dname":"Mana Break","dmg_type":["Physical"]},
+ "pudge_flesh_heap":{"dname":"Flesh Heap"}}

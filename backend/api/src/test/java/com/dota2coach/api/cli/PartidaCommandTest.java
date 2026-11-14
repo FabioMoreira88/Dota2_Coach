@@ -27,6 +27,7 @@ import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.CoachDiagnosis;
 import com.dota2coach.core.model.Hero;
+import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchRecord;
 import com.dota2coach.core.model.MatchReview;
@@ -112,10 +113,11 @@ class PartidaCommandTest {
         MatchPlayer me = new MatchPlayer(0, ACCOUNT, SNIPER, Side.RADIANT, parsed ? Lane.MID_LANE : Lane.UNKNOWN,
                 parsed ? 2 : null, 8, 3, 6, 300, 15, 560, 650, 25000, 4000, 0, 21000, 25,
                 parsed ? List.of(0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40) : List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), 0, 0, null, Map.of(), null);
+                List.of(), List.of(), List.of(), List.of(), 0, 0, null, Map.of(), null, Map.of(), Map.of());
         AnalyzedMatch match = new AnalyzedMatch(MATCH, NOW, Duration.ofMinutes(40), true, GameMode.ALL_PICK, true,
-                parsed, List.of(), List.of(me));
-        return new MatchSnapshot(match, Map.of(SNIPER, new Hero(SNIPER, "Sniper", "agi", List.of())), Map.of());
+                parsed, List.of(), List.of(), List.of(me));
+        return new MatchSnapshot(match, Map.of(SNIPER, new Hero(SNIPER, "Sniper", "agi", List.of())), Map.of(),
+                Map.of(), Map.of(), HeroMatchups.empty(SNIPER));
     }
 
     /** Raio-X com 3 partidas de Sniper, salvo como JSON no histórico como o comando do Raio-X faz. */
@@ -135,7 +137,7 @@ class PartidaCommandTest {
 
     @Test
     void geraORelatorioComparandoComOUltimoRaioXSalvo() throws Exception {
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.of(snapshot(true)));
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(true)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.of(savedXRay()));
 
         command(ACCOUNT).run(new DefaultApplicationArguments());
@@ -161,7 +163,7 @@ class PartidaCommandTest {
     void comComentarioOCoachRecebeAPartidaEOsFocosAtuais() throws Exception {
         XRayReport report = savedXRay();
         org.springframework.test.util.ReflectionTestUtils.setField(report, "id", 7L);
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.of(snapshot(true)));
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(true)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.of(report));
         when(history.diagnoses(7L)).thenReturn(List.of(new CoachDiagnosis(report, "claude", "claude-opus-5-5", NOW,
                 1, 1, BigDecimal.ONE, "## Foco 1: last hits aos 10 min")));
@@ -178,7 +180,7 @@ class PartidaCommandTest {
 
     @Test
     void semReplayAnalisadoNaoGastaComOCoach() {
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.of(snapshot(false)));
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(false)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.empty());
 
         command(ACCOUNT, true, "chave").run(new DefaultApplicationArguments());
@@ -189,7 +191,7 @@ class PartidaCommandTest {
 
     @Test
     void comentarioSemChaveFalhaDepoisDeSalvarAAnalise() {
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.of(snapshot(true)));
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(true)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> command(ACCOUNT, true, "").run(new DefaultApplicationArguments()))
@@ -199,7 +201,7 @@ class PartidaCommandTest {
 
     @Test
     void replayNaoAnalisadoPedeAAnaliseESalvaOResumo() throws Exception {
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.of(snapshot(false)));
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(false)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.empty());
 
         command(ACCOUNT).run(new DefaultApplicationArguments());
@@ -214,7 +216,7 @@ class PartidaCommandTest {
         assertThatThrownBy(() -> command(null).run(new DefaultApplicationArguments()))
                 .hasMessageContaining("--dota2coach.partida.account-id");
 
-        when(matchDataService.collect(MATCH)).thenReturn(Optional.empty());
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> command(ACCOUNT).run(new DefaultApplicationArguments()))
                 .hasMessageContaining("Confira o id");
     }

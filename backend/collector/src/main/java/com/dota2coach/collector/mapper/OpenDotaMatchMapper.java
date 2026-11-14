@@ -12,7 +12,10 @@ import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchRecord;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,7 +125,48 @@ public final class OpenDotaMatchMapper {
                 Objects.equals(detail.lobbyType(), LOBBY_RANKED),
                 detail.version() != null,
                 orEmpty(detail.radiantGoldAdvantage()),
+                picks(detail, players),
                 players.stream().map(p -> toMatchPlayer(p, players, heroIdByName)).toList()));
+    }
+
+    /**
+     * Picks na ordem do draft: pelo picks_bans da Valve, ou pelo draft lido do replay. Sem nenhum dos dois, os
+     * heróis dos jogadores, sem ordem.
+     */
+    static List<AnalyzedMatch.DraftPick> picks(OpenDotaMatchDetailResponse detail,
+            List<OpenDotaMatchDetailResponse.Player> players) {
+        List<OpenDotaMatchDetailResponse.PickBan> fromValve = detail.picksBans() == null ? List.of()
+                : detail.picksBans().stream()
+                        .filter(pb -> pb != null && Boolean.TRUE.equals(pb.pick()) && pb.heroId() != null
+                                && pb.team() != null && pb.order() != null)
+                        .sorted(Comparator.comparingInt(OpenDotaMatchDetailResponse.PickBan::order))
+                        .toList();
+        if (!fromValve.isEmpty()) {
+            List<AnalyzedMatch.DraftPick> picks = new ArrayList<>();
+            for (var pb : fromValve) {
+                picks.add(new AnalyzedMatch.DraftPick(picks.size() + 1, pb.heroId(),
+                        pb.team() == 0 ? Side.RADIANT : Side.DIRE));
+            }
+            return picks;
+        }
+        List<OpenDotaMatchDetailResponse.DraftTiming> fromReplay = detail.draftTimings() == null ? List.of()
+                : detail.draftTimings().stream()
+                        .filter(d -> d != null && Boolean.TRUE.equals(d.pick()) && d.heroId() != null
+                                && d.playerSlot() != null && d.order() != null)
+                        .sorted(Comparator.comparingInt(OpenDotaMatchDetailResponse.DraftTiming::order))
+                        .toList();
+        if (!fromReplay.isEmpty()) {
+            List<AnalyzedMatch.DraftPick> picks = new ArrayList<>();
+            for (var d : fromReplay) {
+                picks.add(new AnalyzedMatch.DraftPick(picks.size() + 1, d.heroId(),
+                        d.playerSlot() >= DIRE_SLOT_START ? Side.DIRE : Side.RADIANT));
+            }
+            return picks;
+        }
+        return players.stream()
+                .map(p -> new AnalyzedMatch.DraftPick(null, p.heroId(),
+                        p.playerSlot() >= DIRE_SLOT_START ? Side.DIRE : Side.RADIANT))
+                .toList();
     }
 
     private static MatchPlayer toMatchPlayer(OpenDotaMatchDetailResponse.Player p,
@@ -174,7 +218,9 @@ public final class OpenDotaMatchMapper {
                 p.sentryLog() == null ? 0 : p.sentryLog().size(),
                 p.laneEfficiencyPct(),
                 percentiles,
-                lastHitsAt10Percentile);
+                lastHitsAt10Percentile,
+                orEmpty(p.damageInflictor()),
+                orEmpty(p.damageInflictorReceived()));
     }
 
     /**
@@ -219,6 +265,19 @@ public final class OpenDotaMatchMapper {
                 .filter(b -> b != null && b.time() != null && b.key() != null)
                 .map(b -> new MatchDetail.Purchase(b.key(), b.time()))
                 .toList();
+    }
+
+    private static Map<String, Long> orEmpty(Map<String, Long> map) {
+        if (map == null) {
+            return Map.of();
+        }
+        Map<String, Long> clean = new HashMap<>();
+        map.forEach((k, v) -> {
+            if (v != null) {
+                clean.put(k == null ? MatchPlayer.BASIC_ATTACK : k, v);
+            }
+        });
+        return clean;
     }
 
     private static <T> List<T> orEmpty(List<T> list) {

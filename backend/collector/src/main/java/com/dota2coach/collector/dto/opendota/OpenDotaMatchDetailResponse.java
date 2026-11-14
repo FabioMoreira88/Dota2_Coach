@@ -19,6 +19,8 @@ public record OpenDotaMatchDetailResponse(
         @JsonProperty("lobby_type") Integer lobbyType,
         @JsonProperty("version") Integer version,
         @JsonProperty("radiant_gold_adv") List<Integer> radiantGoldAdvantage,
+        @JsonProperty("picks_bans") List<PickBan> picksBans,
+        @JsonProperty("draft_timings") List<DraftTiming> draftTimings,
         @JsonProperty("players") List<Player> players) {
 
     /**
@@ -27,6 +29,9 @@ public record OpenDotaMatchDetailResponse(
      * @param lane rota física: 1 embaixo, 2 meio, 3 em cima, 4 e 5 selva
      * @param laneRole 1 segura, 2 meio, 3 difícil, 4 selva
      * @param benchmarks percentil (0 a 1) do jogador entre as partidas públicas do herói, por métrica
+     * @param damageInflictor dano causado em heróis por origem: nome da habilidade, do item, ou "null" para
+     *     ataque básico
+     * @param damageInflictorReceived dano recebido de heróis, pela mesma origem
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Player(
@@ -59,7 +64,25 @@ public record OpenDotaMatchDetailResponse(
             @JsonProperty("obs_log") List<Map<String, Object>> observerLog,
             @JsonProperty("sen_log") List<Map<String, Object>> sentryLog,
             @JsonProperty("lane_efficiency_pct") Integer laneEfficiencyPct,
-            @JsonProperty("benchmarks") Map<String, Benchmark> benchmarks) {}
+            @JsonProperty("benchmarks") Map<String, Benchmark> benchmarks,
+            @JsonProperty("damage_inflictor") Map<String, Long> damageInflictor,
+            @JsonProperty("damage_inflictor_received") Map<String, Long> damageInflictorReceived) {}
+
+    /** Pick ou ban da Valve. {@code team} 0 é Radiant e 1 é Dire; {@code order} começa em 0. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PickBan(
+            @JsonProperty("is_pick") Boolean pick,
+            @JsonProperty("hero_id") Integer heroId,
+            @JsonProperty("team") Integer team,
+            @JsonProperty("order") Integer order) {}
+
+    /** Pick ou ban lido do replay (só em alguns modos). {@code order} começa em 1. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record DraftTiming(
+            @JsonProperty("order") Integer order,
+            @JsonProperty("pick") Boolean pick,
+            @JsonProperty("hero_id") Integer heroId,
+            @JsonProperty("player_slot") Integer playerSlot) {}
 
     /** {@code time} em segundos de jogo (negativo antes do início); {@code key} sem o prefixo "item_". */
     @JsonIgnoreProperties(ignoreUnknown = true)

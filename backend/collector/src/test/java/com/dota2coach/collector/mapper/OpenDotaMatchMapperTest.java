@@ -152,6 +152,21 @@ class OpenDotaMatchMapperTest {
         assertThat(me.lastHitsAt10Percentile()).isEqualTo(0.45);
         assertThat(me.killLog()).containsExactly(new MatchPlayer.Kill(700, 74));
         assertThat(match.players().get(1).accountId()).isNull();
+        assertThat(me.damageReceivedBySource()).containsEntry("null", 4000L).containsEntry("invoker_sun_strike", 2000L);
+        assertThat(match.picks()).containsExactly(
+                new AnalyzedMatch.DraftPick(1, 14, Side.RADIANT), new AnalyzedMatch.DraftPick(2, 2, Side.RADIANT),
+                new AnalyzedMatch.DraftPick(3, 74, Side.DIRE), new AnalyzedMatch.DraftPick(4, 1, Side.DIRE));
+    }
+
+    @Test
+    void semDraftUsaOsHeroisDosJogadoresSemOrdem() {
+        var detail = new OpenDotaMatchDetailResponse(1L, 0L, 1800, true, 22, 7, null, null, null, List.of(),
+                List.of(new OpenDotaMatchDetailResponse.Player(130, null, 74, false, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null)));
+
+        assertThat(OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS).orElseThrow().picks())
+                .containsExactly(new AnalyzedMatch.DraftPick(null, 74, Side.DIRE));
     }
 
     @Test
@@ -165,7 +180,7 @@ class OpenDotaMatchMapperTest {
 
     @Test
     void partidaSemResultadoNaoViraAnalise() {
-        var detail = new OpenDotaMatchDetailResponse(1L, null, null, null, null, null, null, null, List.of());
+        var detail = new OpenDotaMatchDetailResponse(1L, null, null, null, null, null, null, null, null, null, List.of());
 
         assertThat(OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS)).isEmpty();
     }

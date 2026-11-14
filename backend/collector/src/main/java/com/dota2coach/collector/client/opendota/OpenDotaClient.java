@@ -1,8 +1,11 @@
 package com.dota2coach.collector.client.opendota;
 
 import com.dota2coach.collector.config.OpenDotaProperties;
+import com.dota2coach.collector.dto.opendota.OpenDotaAbilityConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaBenchmarksResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroDurationResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaHeroMatchupResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
@@ -100,6 +103,27 @@ public class OpenDotaClient {
         Map<String, OpenDotaItemConstant> items = get(uri -> uri.path("/constants/items").build(),
                 new ParameterizedTypeReference<Map<String, OpenDotaItemConstant>>() {});
         return items == null ? Map.of() : items;
+    }
+
+    /** Habilidades do jogo, indexadas pelo nome interno, com o tipo de dano. */
+    public Map<String, OpenDotaAbilityConstant> getAbilityConstants() {
+        Map<String, OpenDotaAbilityConstant> abilities = get(uri -> uri.path("/constants/abilities").build(),
+                new ParameterizedTypeReference<Map<String, OpenDotaAbilityConstant>>() {});
+        return abilities == null ? Map.of() : abilities;
+    }
+
+    /** Partidas públicas recentes do herói por faixa de duração, com vitórias. */
+    public List<OpenDotaHeroDurationResponse> getHeroDurations(int heroId) {
+        List<OpenDotaHeroDurationResponse> durations = get(uri -> uri.path("/heroes/{id}/durations").build(heroId),
+                new ParameterizedTypeReference<List<OpenDotaHeroDurationResponse>>() {});
+        return durations == null ? List.of() : durations;
+    }
+
+    /** Partidas públicas recentes do herói contra cada outro herói, com vitórias. */
+    public List<OpenDotaHeroMatchupResponse> getHeroMatchups(int heroId) {
+        List<OpenDotaHeroMatchupResponse> matchups = get(uri -> uri.path("/heroes/{id}/matchups").build(heroId),
+                new ParameterizedTypeReference<List<OpenDotaHeroMatchupResponse>>() {});
+        return matchups == null ? List.of() : matchups;
     }
 
     /** Escolhas e vitórias de cada herói em partidas públicas recentes, por faixa de medalha. */
