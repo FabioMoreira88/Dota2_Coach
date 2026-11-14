@@ -15,6 +15,7 @@ import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
+import com.dota2coach.core.model.MatchSnapshot;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -241,12 +242,22 @@ class MatchAnalysisCalculatorTest {
         assertThat(p.itemUses()).as("pelo nome do item quando ele é conhecido; sem os que não foram usados")
                 .containsExactly(new MatchAnalysis.Use("tpscroll", 3), new MatchAnalysis.Use("Black King Bar", 2));
         assertThat(p.abilityUses()).containsExactly(new MatchAnalysis.Use("Shrapnel", 10),
-                new MatchAnalysis.Use("sniper_assassinate", 4));
+                new MatchAnalysis.Use("sniper assassinate", 4));
         assertThat(p.stunSeconds()).isEqualTo(3.5);
         assertThat(p.runes()).containsExactly(new MatchAnalysis.Use("Bounty", 3),
                 new MatchAnalysis.Use("Dano dobrado", 1));
         assertThat(p.campsStacked()).isEqualTo(2);
         assertThat(p.observerKills()).isEqualTo(1);
+    }
+
+    @Test
+    void nomeDeHabilidadeSemNomeDeExibicaoFicaLegivel() {
+        MatchSnapshot snapshot = sniperMid(true);
+
+        assertThat(MatchPlayCalculator.abilityName(snapshot, "ability_capture")).isEqualTo("Captura de outpost");
+        assertThat(MatchPlayCalculator.abilityName(snapshot, "abyssal_underlord_portal_warp"))
+                .isEqualTo("Portal do Underlord");
+        assertThat(MatchPlayCalculator.abilityName(snapshot, "some_new_thing")).isEqualTo("some new thing");
     }
 
     @Test

@@ -55,8 +55,9 @@ final class MatchTimelineCalculator {
     }
 
     /**
-     * Até {@link #MAX_MOMENTS} trechos para rever: as lutas que mais mexeram no ouro (as suas primeiro) e as suas
-     * mortes fora de luta que deixaram você mais tempo morto.
+     * Até {@link #MAX_MOMENTS} trechos para rever: as lutas que mais mexeram no ouro (as suas primeiro) e, nas vagas
+     * que sobram, as suas mortes que ainda não estão num desses trechos (as de fora de luta primeiro, depois as que
+     * deixaram você mais tempo morto).
      */
     static List<ReplayMoment> replayMoments(MatchSnapshot snapshot, MatchPlayer me, List<FightLine> fights) {
         List<ReplayMoment> moments = new ArrayList<>();
@@ -68,17 +69,33 @@ final class MatchTimelineCalculator {
                         "luta com " + (f.goldSwing() > 0 ? "+" : "") + f.goldSwing() + " de ouro para seu time"
                                 + (f.youDied() ? "; você morreu" : f.youTookPart() ? "; você participou"
                                         : "; você não estava"))));
-        me.deathLog().stream()
-                .filter(d -> fights.stream().noneMatch(
-                        f -> d.timeSeconds() >= f.startSeconds() && d.timeSeconds() <= f.endSeconds()))
-                .sorted(Comparator.comparingInt(MatchPlayer.Death::secondsDead).reversed())
-                .limit(MAX_MOMENTS - moments.size())
-                .forEach(d -> moments.add(new ReplayMoment(Math.max(0, d.timeSeconds() - DEATH_BEFORE_SECONDS),
-                        d.timeSeconds() + DEATH_AFTER_SECONDS,
-                        "você morreu fora de luta" + (d.killerHeroId() == null ? ""
-                                : " para " + snapshot.heroName(d.killerHeroId())))));
+        List<MatchPlayer.Death> deaths = me.deathLog().stream()
+                .sorted(Comparator.comparing((MatchPlayer.Death d) -> fightAt(fights, d) != null)
+                        .thenComparing(Comparator.comparingInt(MatchPlayer.Death::secondsDead).reversed()))
+                .toList();
+        for (MatchPlayer.Death d : deaths) {
+            if (moments.size() >= MAX_MOMENTS) {
+                break;
+            }
+            if (moments.stream().anyMatch(m -> d.timeSeconds() >= m.fromSeconds() && d.timeSeconds() <= m.toSeconds())) {
+                continue;
+            }
+            String killer = d.killerHeroId() == null ? "" : " para " + snapshot.heroName(d.killerHeroId());
+            FightLine f = fightAt(fights, d);
+            moments.add(f == null
+                    ? new ReplayMoment(Math.max(0, d.timeSeconds() - DEATH_BEFORE_SECONDS),
+                            d.timeSeconds() + DEATH_AFTER_SECONDS, "você morreu fora de luta" + killer)
+                    : new ReplayMoment(f.startSeconds(), f.endSeconds(), "você morreu" + killer + " numa luta com "
+                            + (f.goldSwing() > 0 ? "+" : "") + f.goldSwing() + " de ouro para seu time"));
+        }
         moments.sort(Comparator.comparingInt(ReplayMoment::fromSeconds));
         return moments;
+    }
+
+    private static FightLine fightAt(List<FightLine> fights, MatchPlayer.Death d) {
+        return fights.stream()
+                .filter(f -> d.timeSeconds() >= f.startSeconds() && d.timeSeconds() <= f.endSeconds())
+                .findFirst().orElse(null);
     }
 
     private static FightLine fight(MatchSnapshot snapshot, AnalyzedMatch.Teamfight tf, MatchPlayer me) {
