@@ -4,6 +4,7 @@ import com.dota2coach.collector.client.opendota.OpenDotaClient;
 import com.dota2coach.collector.mapper.OpenDotaMatchMapper;
 import com.dota2coach.collector.mapper.OpenDotaReferenceMapper;
 import com.dota2coach.core.exception.ExternalServiceUnavailableException;
+import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.MatchRecord;
 import com.dota2coach.core.model.PlayerSummary;
@@ -27,7 +28,7 @@ public class ProfileSnapshotService {
 
     /** Quantas partidas recentes definem os heróis "atuais" do jogador. */
     static final int RECENT_MATCHES = 100;
-    /** Para quantos desses heróis buscar a popularidade de itens (uma chamada por herói). */
+    /** Para quantos desses heróis buscar popularidade de itens e percentis (duas chamadas por herói). */
     static final int ITEM_POPULARITY_HEROES = 10;
     /** A Valve mantém os replays por cerca de duas semanas; depois disso a OpenDota não consegue analisar. */
     static final Duration REPLAY_AVAILABILITY = Duration.ofDays(14);
@@ -44,7 +45,7 @@ public class ProfileSnapshotService {
 
     /**
      * Coleta perfil, partidas, heróis, itens, meta por faixa e itens populares dos heróis mais jogados
-     * recentemente. Faz cerca de 15 chamadas à OpenDota.
+     * recentemente. Faz cerca de 25 chamadas à OpenDota.
      */
     public ProfileSnapshot collect(long accountId) {
         PlayerSummary player = playerDataService.getSummary(accountId);
@@ -52,12 +53,16 @@ public class ProfileSnapshotService {
         var heroes = OpenDotaReferenceMapper.toHeroes(openDotaClient.getHeroConstants().values());
         var items = OpenDotaReferenceMapper.toItems(openDotaClient.getItemConstants());
         var heroMeta = OpenDotaReferenceMapper.toHeroMeta(openDotaClient.getHeroStats());
-        Map<Integer, HeroItemPopularity> itemPopularity = recentTopHeroes(matches).stream()
+        List<Integer> topHeroes = recentTopHeroes(matches);
+        Map<Integer, HeroItemPopularity> itemPopularity = topHeroes.stream()
                 .map(heroId -> OpenDotaReferenceMapper.toItemPopularity(
                         heroId, openDotaClient.getItemPopularity(heroId)))
                 .collect(Collectors.toMap(HeroItemPopularity::heroId, Function.identity()));
+        Map<Integer, HeroBenchmark> benchmarks = topHeroes.stream()
+                .map(heroId -> OpenDotaReferenceMapper.toHeroBenchmark(heroId, openDotaClient.getBenchmarks(heroId)))
+                .collect(Collectors.toMap(HeroBenchmark::heroId, Function.identity()));
         return new ProfileSnapshot(
-                player, matches, heroes, items, heroMeta, itemPopularity, Instant.now(clock));
+                player, matches, heroes, items, heroMeta, itemPopularity, benchmarks, Instant.now(clock));
     }
 
     /**

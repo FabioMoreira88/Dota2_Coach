@@ -39,6 +39,9 @@ class XRayMarkdownRendererTest {
         assertThat(md).contains("| Sniper | 30 | 66,7% | 4,0 | 500 | 600 | 30 (66,7%) | 54,0% |");
         assertThat(md).contains("| Meio | 5 |");
         assertThat(md).contains("## Fundamentos", "| Mortes por partida | 4,0 | 4,0 | 0,0 |");
+        assertThat(md).contains("## Comparação com outros jogadores do herói",
+                "| Herói | Partidas | Ouro/min | XP/min | Last hits/min | Dano em heróis/min | Mortes/min |",
+                "| Sniper | 30 | 500 (p58) | — | — | — | 0,10 (p30) |");
         assertThat(md).contains("### Sniper", "- **Aderência:** 100,0%");
         assertThat(md).contains("- [ ] Total de partidas: 30, taxa de vitória 66,7%");
     }
@@ -49,11 +52,15 @@ class XRayMarkdownRendererTest {
 
         assertThat(md).contains("- **Medalha:** sem medalha",
                 "- **Posição principal (informada pelo jogador):** não informada", "_Sem partidas no recorte._",
-                "em todas as faixas (você está sem medalha)");
+                "em todas as faixas (você está sem medalha)",
+                "_Sem dados de comparação para os heróis mais jogados._");
     }
 
     @Test
     void medalhaEEscape() {
+        assertThat(XRayMarkdownRenderer.percentile(0.0)).isEqualTo("abaixo de p10");
+        assertThat(XRayMarkdownRenderer.percentile(1.0)).isEqualTo("acima de p99");
+        assertThat(XRayMarkdownRenderer.percentile(0.574)).isEqualTo("p57");
         assertThat(XRayMarkdownRenderer.medal(80)).isEqualTo("Imortal");
         assertThat(XRayMarkdownRenderer.medal(11)).isEqualTo("Arauto 1");
         assertThat(XRayMarkdownRenderer.escape("a|b_<c>")).isEqualTo("a\\|b\\_&lt;c&gt;");

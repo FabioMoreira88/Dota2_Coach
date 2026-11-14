@@ -1,6 +1,7 @@
 package com.dota2coach.collector.client.opendota;
 
 import com.dota2coach.collector.config.OpenDotaProperties;
+import com.dota2coach.collector.dto.opendota.OpenDotaBenchmarksResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
@@ -110,6 +111,12 @@ public class OpenDotaClient {
     public OpenDotaItemPopularityResponse getItemPopularity(int heroId) {
         return get(uri -> uri.path("/heroes/{id}/itemPopularity").build(heroId),
                 new ParameterizedTypeReference<OpenDotaItemPopularityResponse>() {});
+    }
+
+    /** Percentis de ouro, XP, last hits, dano e mortes por minuto do herói em partidas públicas recentes. */
+    public OpenDotaBenchmarksResponse getBenchmarks(int heroId) {
+        return get(uri -> uri.path("/benchmarks").queryParam("hero_id", heroId).build(),
+                new ParameterizedTypeReference<OpenDotaBenchmarksResponse>() {});
     }
 
     /**

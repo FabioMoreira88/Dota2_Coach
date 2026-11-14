@@ -1,0 +1,8 @@
+{"hero_id":35,"result":{
+ "gold_per_min":[{"percentile":0.1,"value":368},{"percentile":0.5,"value":520},{"percentile":0.99,"value":900}],
+ "xp_per_min":[{"percentile":0.1,"value":400},{"percentile":0.5,"value":600}],
+ "kills_per_min":[{"percentile":0.1,"value":0.1}],
+ "last_hits_per_min":[{"percentile":0.1,"value":2.9476584022038566},{"percentile":0.2,"value":4.02997056462403}],
+ "hero_damage_per_min":[],
+ "deaths_per_min":[{"percentile":0.1,"value":0.05},{"percentile":0.5,"value":null}]
+}}

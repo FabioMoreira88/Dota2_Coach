@@ -1,13 +1,16 @@
 package com.dota2coach.analysis.report;
 
 import com.dota2coach.analysis.metric.ProfileXRay;
+import com.dota2coach.analysis.metric.ProfileXRay.HeroBenchmarkLine;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
+import com.dota2coach.analysis.metric.ProfileXRay.MetricComparison;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
 import com.dota2coach.analysis.metric.ProfileXRay.LaneLine;
 import com.dota2coach.analysis.metric.ProfileXRay.StatBlock;
 import com.dota2coach.analysis.metric.WinLoss;
 import com.dota2coach.analysis.metric.XRayCalculator;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.RankBracket;
 import java.text.NumberFormat;
 import java.time.Instant;
@@ -37,6 +40,7 @@ public class XRayMarkdownRenderer {
         heroes(md, x);
         lanes(md, x);
         fundamentals(md, x);
+        benchmarks(md, x);
         items(md, x);
         meta(md, x);
         dotabuffCheck(md, x);
@@ -141,6 +145,58 @@ public class XRayMarkdownRenderer {
                 .append(" | ").append(previous.matches() == 0 || latest.matches() == 0 ? "—"
                         : percent ? signedPoints(a - b) : signed(a - b))
                 .append(" |\n");
+    }
+
+    private void benchmarks(StringBuilder md, ProfileXRay x) {
+        md.append("## Comparação com outros jogadores do herói\n\n");
+        if (x.benchmarks().isEmpty()) {
+            md.append("_Sem dados de comparação para os heróis mais jogados._\n\n");
+            return;
+        }
+        md.append("Sua média nas partidas recentes com o herói e, entre parênteses, o percentil dela entre as partidas ")
+                .append("públicas desse herói na OpenDota (todas as faixas e posições). p50 é a mediana; p80 quer dizer ")
+                .append("acima de 80% das partidas. Em mortes, percentil alto é ruim: você morre mais que a maioria.\n\n");
+        md.append("| Herói | Partidas |");
+        for (BenchmarkMetric metric : BenchmarkMetric.values()) {
+            md.append(' ').append(metric.label()).append(" |");
+        }
+        md.append("\n|---|---:|");
+        md.append("---:|".repeat(BenchmarkMetric.values().length)).append('\n');
+        for (HeroBenchmarkLine line : x.benchmarks()) {
+            md.append("| ").append(escape(line.name())).append(" | ").append(line.games()).append(" |");
+            for (BenchmarkMetric metric : BenchmarkMetric.values()) {
+                MetricComparison c = line.metrics().get(metric);
+                md.append(' ').append(c == null ? "—" : metricValue(metric, c.playerValue()) + " ("
+                        + percentile(c.percentile()) + ")").append(" |");
+            }
+            md.append('\n');
+        }
+        md.append('\n');
+    }
+
+    private static String metricValue(BenchmarkMetric metric, double value) {
+        return switch (metric) {
+            case GOLD_PER_MIN, XP_PER_MIN, HERO_DAMAGE_PER_MIN -> whole(value);
+            case LAST_HITS_PER_MIN -> dec(value);
+            case DEATHS_PER_MIN -> twoDecimals(value);
+        };
+    }
+
+    static String percentile(double fraction) {
+        if (fraction <= 0.0) {
+            return "abaixo de p10";
+        }
+        if (fraction >= 1.0) {
+            return "acima de p99";
+        }
+        return "p" + Math.round(fraction * 100);
+    }
+
+    private static String twoDecimals(double value) {
+        NumberFormat f = NumberFormat.getNumberInstance(PT_BR);
+        f.setMinimumFractionDigits(2);
+        f.setMaximumFractionDigits(2);
+        return f.format(value);
     }
 
     private void items(StringBuilder md, ProfileXRay x) {

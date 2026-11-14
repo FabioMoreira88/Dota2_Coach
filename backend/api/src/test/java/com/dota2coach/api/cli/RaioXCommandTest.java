@@ -46,7 +46,7 @@ class RaioXCommandTest {
     private static ProfileSnapshot emptySnapshot() {
         PlayerSummary player = new PlayerSummary(
                 SteamId.fromAccountId(ACCOUNT), "Heisenberg", null, 53, 0, 0, List.of());
-        return new ProfileSnapshot(player, List.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+        return new ProfileSnapshot(player, List.of(), Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
                 Instant.parse("2026-11-11T12:00:00Z"));
     }
 
