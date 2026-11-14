@@ -21,7 +21,9 @@ public record OpenDotaMatchDetailResponse(
         @JsonProperty("radiant_gold_adv") List<Integer> radiantGoldAdvantage,
         @JsonProperty("picks_bans") List<PickBan> picksBans,
         @JsonProperty("draft_timings") List<DraftTiming> draftTimings,
-        @JsonProperty("players") List<Player> players) {
+        @JsonProperty("players") List<Player> players,
+        @JsonProperty("objectives") List<Objective> objectives,
+        @JsonProperty("teamfights") List<Teamfight> teamfights) {
 
     /**
      * Jogador na partida.
@@ -104,4 +106,33 @@ public record OpenDotaMatchDetailResponse(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Benchmark(@JsonProperty("raw") Double raw, @JsonProperty("pct") Double pct) {}
+
+    /**
+     * Evento de objetivo. {@code type} "building_kill" traz em {@code key} a construção destruída;
+     * "CHAT_MESSAGE_ROSHAN_KILL" traz em {@code team} o time (2 Radiant, 3 Dire); "CHAT_MESSAGE_FIRSTBLOOD"
+     * traz em {@code player_slot} quem matou.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Objective(
+            @JsonProperty("time") Integer time,
+            @JsonProperty("type") String type,
+            @JsonProperty("key") Object key,
+            @JsonProperty("team") Integer team,
+            @JsonProperty("player_slot") Integer playerSlot) {}
+
+    /** Luta com 3 ou mais mortes. {@code players} tem os dez jogadores na ordem dos slots (Radiant primeiro). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Teamfight(
+            @JsonProperty("start") Integer start,
+            @JsonProperty("end") Integer end,
+            @JsonProperty("deaths") Integer deaths,
+            @JsonProperty("players") List<FightPlayer> players) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FightPlayer(
+            @JsonProperty("deaths") Integer deaths,
+            @JsonProperty("buybacks") Integer buybacks,
+            @JsonProperty("damage") Long damage,
+            @JsonProperty("healing") Long healing,
+            @JsonProperty("gold_delta") Integer goldDelta) {}
 }

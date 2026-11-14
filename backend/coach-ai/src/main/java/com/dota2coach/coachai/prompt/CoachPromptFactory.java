@@ -38,7 +38,8 @@ public final class CoachPromptFactory {
 
             Regras:
             - Use apenas os números da análise. Não invente estatísticas nem o que aconteceu na partida: você não \
-            viu o replay, então não fale de posicionamento, lutas ou decisões que os números não mostram.
+            viu o replay, então não fale de posicionamento, lutas ou decisões que os números não mostram. As \
+            lutas da seção "Lutas que mais mexeram no ouro" podem ser citadas, mas só com o que a tabela mostra.
             - A posição principal (1 a 5) foi informada pelo jogador. Se a rota desta partida não combina com essa \
             posição (por exemplo, ele jogou de suporte), avalie pelo papel que ele fez nesta partida e diga isso.
             - Abra com 2 ou 3 frases sobre o que os números dizem desta partida, do ponto de vista dele.
@@ -58,6 +59,10 @@ public final class CoachPromptFactory {
             recebeu para dizer contra o que ele precisava se proteger. Use a força dos times por duração para \
             dizer se o time adversário ficava mais forte com o tempo e como isso pesa no resultado e na duração \
             desta partida.
+            - Como a partida foi decidida: cruze a seção "Objetivos" e as "Lutas que mais mexeram no ouro" com o \
+            ouro do time por minuto. Aponte em que momento a partida virou (a luta ou o objetivo que coincide \
+            com a maior perda ou ganho), quem morreu nessa luta, se o jogador estava nela e se morreu, e o que \
+            caiu logo depois (torres, barracks, Roshan). Diga em 2 a 4 frases, sem repetir as tabelas.
             - Termine com no máximo 3 lições desta partida, da mais importante para a menos importante, cada uma \
             apoiada em um número e com algo concreto para treinar nas próximas partidas.
             - Se os focos atuais do jogador vierem junto, diga em uma frase por foco se esta partida avançou, \
@@ -67,7 +72,7 @@ public final class CoachPromptFactory {
             - Não sugira picks durante o draft nem nada para usar dentro de uma partida em andamento. A análise é \
             sempre feita depois do jogo.
             - Feche com um ponto positivo da partida, apoiado nos números.
-            - Escreva em português do Brasil, em Markdown, com no máximo 650 palavras. Use um tom direto e \
+            - Escreva em português do Brasil, em Markdown, com no máximo 750 palavras. Use um tom direto e \
             encorajador, de coach experiente.
             """;
 

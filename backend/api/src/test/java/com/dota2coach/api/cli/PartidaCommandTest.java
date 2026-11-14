@@ -115,7 +115,7 @@ class PartidaCommandTest {
                 parsed ? List.of(0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40) : List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), 0, 0, null, Map.of(), null, Map.of(), Map.of());
         AnalyzedMatch match = new AnalyzedMatch(MATCH, NOW, Duration.ofMinutes(40), true, GameMode.ALL_PICK, true,
-                parsed, List.of(), List.of(), List.of(me));
+                parsed, List.of(), List.of(), List.of(me), List.of(), List.of());
         return new MatchSnapshot(match, Map.of(SNIPER, new Hero(SNIPER, "Sniper", "agi", List.of())), Map.of(),
                 Map.of(), Map.of(), HeroMatchups.empty(SNIPER));
     }

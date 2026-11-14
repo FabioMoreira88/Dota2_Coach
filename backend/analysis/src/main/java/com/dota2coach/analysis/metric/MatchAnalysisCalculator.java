@@ -70,7 +70,8 @@ public class MatchAnalysisCalculator {
                 me.sentriesPlaced(),
                 teamGold(match, me),
                 usual(latestXRay, heroName),
-                MatchContextCalculator.calculate(snapshot, me));
+                MatchContextCalculator.calculate(snapshot, me),
+                MatchTimelineCalculator.calculate(snapshot, me));
     }
 
     static Double killParticipation(AnalyzedMatch match, MatchPlayer me) {

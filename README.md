@@ -66,8 +66,9 @@ uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatóri
 Analisa uma partida escolhida: fase de rotas contra o adversário da sua rota, mortes (quando e para quem), tempo
 dos itens principais, wards e ouro do time, comparando com o seu padrão no último Raio-X salvo. A seção
 "Contexto da partida" mostra os dois times: ordem dos picks (quando a OpenDota informa), dano físico, mágico e puro
-que cada time causou, funções dos heróis, seu herói contra cada adversário e a força de cada time por duração. Precisa do banco
-no ar. Na pasta `backend`:
+que cada time causou, funções dos heróis, seu herói contra cada adversário e a força de cada time por duração. Com o replay analisado, o relatório
+também traz a linha do tempo de objetivos (torres, barracks, Roshan, first blood) e as lutas que mais mexeram no
+ouro, com quem morreu e se você estava nelas. Precisa do banco no ar. Na pasta `backend`:
 
 ```
 ./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.partida.match-id=9083198111 --dota2coach.partida.account-id=34839344 --dota2coach.partida.position=mid"

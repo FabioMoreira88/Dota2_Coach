@@ -60,10 +60,43 @@ public final class Matches {
                 List.of(new AnalyzedMatch.DraftPick(1, Snapshots.AXE, Side.DIRE),
                         new AnalyzedMatch.DraftPick(2, Snapshots.OGRE, Side.RADIANT),
                         new AnalyzedMatch.DraftPick(3, Snapshots.SNIPER, Side.RADIANT)),
-                List.of(me, ally, rival));
+                List.of(me, ally, rival), parsed ? objectives() : List.of(), parsed ? teamfights() : List.of());
         return new MatchSnapshot(match, Snapshots.heroes(), Snapshots.items(), damageTypes(), durations(),
                 new HeroMatchups(Snapshots.SNIPER, Map.of(Snapshots.AXE, new HeroMatchups.Record(1000, 470),
                         Snapshots.OGRE, new HeroMatchups.Record(5, 5))));
+    }
+
+    /** First blood do Dire, uma T1 de cada lado, Roshan do Dire e um barracks do Radiant caindo. */
+    static List<AnalyzedMatch.Objective> objectives() {
+        return List.of(
+                new AnalyzedMatch.Objective(300, AnalyzedMatch.ObjectiveKind.FIRST_BLOOD, Side.DIRE, null),
+                new AnalyzedMatch.Objective(700, AnalyzedMatch.ObjectiveKind.BUILDING, Side.RADIANT,
+                        "npc_dota_badguys_tower1_mid"),
+                new AnalyzedMatch.Objective(900, AnalyzedMatch.ObjectiveKind.BUILDING, Side.DIRE,
+                        "npc_dota_goodguys_tower1_bot"),
+                new AnalyzedMatch.Objective(1500, AnalyzedMatch.ObjectiveKind.ROSHAN, Side.DIRE, null),
+                new AnalyzedMatch.Objective(2300, AnalyzedMatch.ObjectiveKind.BUILDING, Side.DIRE,
+                        "npc_dota_goodguys_range_rax_mid"));
+    }
+
+    /**
+     * Três lutas: uma pequena que o Radiant ganha (+300), uma em que o Sniper morre e o Radiant perde 1500, e uma
+     * em que o Sniper não está e o Radiant perde 200.
+     */
+    static List<AnalyzedMatch.Teamfight> teamfights() {
+        return List.of(
+                new AnalyzedMatch.Teamfight(600, 640, List.of(
+                        new AnalyzedMatch.FightPlayer(Snapshots.SNIPER, Side.RADIANT, 0, 300, 1200, 0, 0),
+                        new AnalyzedMatch.FightPlayer(Snapshots.OGRE, Side.RADIANT, 1, -100, 300, 0, 0),
+                        new AnalyzedMatch.FightPlayer(Snapshots.AXE, Side.DIRE, 2, -100, 500, 0, 0))),
+                new AnalyzedMatch.Teamfight(1880, 1930, List.of(
+                        new AnalyzedMatch.FightPlayer(Snapshots.SNIPER, Side.RADIANT, 1, -300, 800, 0, 0),
+                        new AnalyzedMatch.FightPlayer(Snapshots.OGRE, Side.RADIANT, 1, -200, 200, 0, 1),
+                        new AnalyzedMatch.FightPlayer(Snapshots.AXE, Side.DIRE, 0, 1000, 3000, 0, 0))),
+                new AnalyzedMatch.Teamfight(2100, 2130, List.of(
+                        new AnalyzedMatch.FightPlayer(Snapshots.SNIPER, Side.RADIANT, 0, 0, 0, 0, 0),
+                        new AnalyzedMatch.FightPlayer(Snapshots.OGRE, Side.RADIANT, 1, -100, 100, 0, 0),
+                        new AnalyzedMatch.FightPlayer(Snapshots.AXE, Side.DIRE, 1, 100, 600, 0, 0))));
     }
 
     static Map<String, DamageType> damageTypes() {

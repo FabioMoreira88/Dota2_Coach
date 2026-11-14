@@ -28,6 +28,9 @@ public final class OpenDotaMatchMapper {
     /** player_slot a partir de 128 é o lado Dire. */
     private static final int DIRE_SLOT_START = 128;
     private static final int LOBBY_RANKED = 7;
+    /** Times nos eventos de objetivo da OpenDota. */
+    private static final int TEAM_RADIANT = 2;
+    private static final int TEAM_DIRE = 3;
     /** leaver_status 0 = ficou, 1 = desconectou e voltou; a partir de 2 conta como abandono. */
     private static final int LEAVER_ABANDON_START = 2;
 
@@ -126,7 +129,87 @@ public final class OpenDotaMatchMapper {
                 detail.version() != null,
                 orEmpty(detail.radiantGoldAdvantage()),
                 picks(detail, players),
-                players.stream().map(p -> toMatchPlayer(p, players, heroIdByName)).toList()));
+                players.stream().map(p -> toMatchPlayer(p, players, heroIdByName)).toList(),
+                objectives(detail.objectives()),
+                teamfights(detail.teamfights(), players)));
+    }
+
+    /** Torres, barracks e trono destruídos, Roshans e first blood, em ordem de tempo. */
+    static List<AnalyzedMatch.Objective> objectives(List<OpenDotaMatchDetailResponse.Objective> raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        List<AnalyzedMatch.Objective> objectives = new ArrayList<>();
+        for (var o : raw) {
+            if (o == null || o.time() == null || o.type() == null) {
+                continue;
+            }
+            switch (o.type()) {
+                case "building_kill" -> {
+                    String key = o.key() instanceof String k ? k : null;
+                    if (key != null && (key.contains("_tower") || key.contains("_rax_") || key.endsWith("_fort"))) {
+                        Side owner = key.contains("goodguys") ? Side.RADIANT
+                                : key.contains("badguys") ? Side.DIRE : null;
+                        if (owner != null) {
+                            objectives.add(new AnalyzedMatch.Objective(o.time(), AnalyzedMatch.ObjectiveKind.BUILDING,
+                                    owner == Side.RADIANT ? Side.DIRE : Side.RADIANT, key));
+                        }
+                    }
+                }
+                case "CHAT_MESSAGE_ROSHAN_KILL" -> {
+                    if (o.team() != null && (o.team() == TEAM_RADIANT || o.team() == TEAM_DIRE)) {
+                        objectives.add(new AnalyzedMatch.Objective(o.time(), AnalyzedMatch.ObjectiveKind.ROSHAN,
+                                o.team() == TEAM_RADIANT ? Side.RADIANT : Side.DIRE, null));
+                    }
+                }
+                case "CHAT_MESSAGE_FIRSTBLOOD" -> {
+                    if (o.playerSlot() != null) {
+                        objectives.add(new AnalyzedMatch.Objective(o.time(),
+                                AnalyzedMatch.ObjectiveKind.FIRST_BLOOD,
+                                o.playerSlot() >= DIRE_SLOT_START ? Side.DIRE : Side.RADIANT, null));
+                    }
+                }
+                default -> { }
+            }
+        }
+        objectives.sort(Comparator.comparingInt(AnalyzedMatch.Objective::time));
+        return objectives;
+    }
+
+    /**
+     * Lutas, ligando cada posição da lista de jogadores da luta ao herói pela ordem dos slots (Radiant primeiro).
+     * Lutas sem os dez jogadores ficam de fora, porque não dá para saber quem é quem.
+     */
+    static List<AnalyzedMatch.Teamfight> teamfights(List<OpenDotaMatchDetailResponse.Teamfight> raw,
+            List<OpenDotaMatchDetailResponse.Player> players) {
+        if (raw == null) {
+            return List.of();
+        }
+        List<OpenDotaMatchDetailResponse.Player> bySlot = players.stream()
+                .sorted(Comparator.comparingInt(OpenDotaMatchDetailResponse.Player::playerSlot))
+                .toList();
+        List<AnalyzedMatch.Teamfight> fights = new ArrayList<>();
+        for (var tf : raw) {
+            if (tf == null || tf.start() == null || tf.end() == null || tf.players() == null
+                    || tf.players().size() != bySlot.size()) {
+                continue;
+            }
+            List<AnalyzedMatch.FightPlayer> fighters = new ArrayList<>();
+            for (int i = 0; i < bySlot.size(); i++) {
+                var p = bySlot.get(i);
+                var f = tf.players().get(i);
+                if (f == null) {
+                    continue;
+                }
+                fighters.add(new AnalyzedMatch.FightPlayer(p.heroId(),
+                        p.playerSlot() >= DIRE_SLOT_START ? Side.DIRE : Side.RADIANT,
+                        orZero(f.deaths()), orZero(f.goldDelta()), f.damage() == null ? 0 : f.damage(),
+                        f.healing() == null ? 0 : f.healing(), orZero(f.buybacks())));
+            }
+            fights.add(new AnalyzedMatch.Teamfight(tf.start(), tf.end(), fighters));
+        }
+        fights.sort(Comparator.comparingInt(AnalyzedMatch.Teamfight::start));
+        return fights;
     }
 
     /**

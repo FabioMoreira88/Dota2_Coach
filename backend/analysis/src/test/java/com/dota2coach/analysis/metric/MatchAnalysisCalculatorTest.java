@@ -15,6 +15,7 @@ import com.dota2coach.analysis.metric.MatchAnalysis.TeamGold;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Position;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class MatchAnalysisCalculatorTest {
@@ -90,6 +91,53 @@ class MatchAnalysisCalculatorTest {
     }
 
     @Test
+    void objetivosELutasDoPontoDeVistaDoSeuTime() {
+        MatchAnalysis.Timeline t = calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).timeline();
+
+        assertThat(t.objectives()).containsExactly(
+                new MatchAnalysis.ObjectiveLine(300, "tirou o first blood", false),
+                new MatchAnalysis.ObjectiveLine(700, "derrubou a torre T1 do meio", true),
+                new MatchAnalysis.ObjectiveLine(900, "derrubou a torre T1 de baixo", false),
+                new MatchAnalysis.ObjectiveLine(1500, "matou o Roshan", false),
+                new MatchAnalysis.ObjectiveLine(2300, "derrubou o barracks à distância do meio", false));
+        assertThat(t.fightsTotal()).isEqualTo(3);
+        assertThat(t.fightsWithYou()).isEqualTo(2);
+        assertThat(t.fightsWonByGold()).isEqualTo(1);
+        assertThat(t.biggestFights()).containsExactly(
+                new MatchAnalysis.FightLine(600, 640, 300, List.of("Ogre Magi"), List.of("Axe", "Axe"), true, false,
+                        0),
+                new MatchAnalysis.FightLine(1880, 1930, -1500, List.of("Sniper", "Ogre Magi"), List.of(), true, true,
+                        1),
+                new MatchAnalysis.FightLine(2100, 2130, -200, List.of("Ogre Magi"), List.of("Axe"), false, false,
+                        0));
+    }
+
+    @Test
+    void ficamSoAsMaioresLutasEmOrdemDeTempo() {
+        var fights = java.util.stream.IntStream.range(0, 7)
+                .mapToObj(i -> new com.dota2coach.core.model.AnalyzedMatch.Teamfight(i * 100, i * 100 + 30, List.of(
+                        new com.dota2coach.core.model.AnalyzedMatch.FightPlayer(
+                                com.dota2coach.analysis.support.Snapshots.SNIPER,
+                                com.dota2coach.core.enums.Side.RADIANT, 0, (i % 2 == 0 ? 1 : -1) * i * 100, 10, 0,
+                                0))))
+                .toList();
+        var base = sniperMid(true);
+        var match = base.match();
+        var withFights = new com.dota2coach.core.model.AnalyzedMatch(match.matchId(), match.startTime(),
+                match.duration(), match.radiantWin(), match.gameMode(), match.ranked(), true,
+                match.radiantGoldAdvantage(), match.picks(), match.players(), match.objectives(), fights);
+        var snapshot = new com.dota2coach.core.model.MatchSnapshot(withFights, base.heroes(), base.items(),
+                base.damageTypes(), base.heroDurations(), base.playerMatchups());
+
+        MatchAnalysis.Timeline t = calculator.analyze(snapshot, ACCOUNT, null, null).timeline();
+
+        assertThat(t.fightsTotal()).isEqualTo(7);
+        assertThat(t.biggestFights()).extracting(MatchAnalysis.FightLine::goldSwing)
+                .as("as 5 maiores em valor absoluto, na ordem em que aconteceram")
+                .containsExactly(200, -300, 400, -500, 600);
+    }
+
+    @Test
     void semRaioXSalvoNaoComparaComOPadrao() {
         MatchAnalysis a = calculator.analyze(sniperMid(true), ACCOUNT, null, null);
 
@@ -110,6 +158,7 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.deathsByPhase()).isEmpty();
         assertThat(a.items()).isEmpty();
         assertThat(a.teamGold()).isEmpty();
+        assertThat(a.timeline()).isEqualTo(MatchAnalysis.Timeline.EMPTY);
     }
 
     @Test

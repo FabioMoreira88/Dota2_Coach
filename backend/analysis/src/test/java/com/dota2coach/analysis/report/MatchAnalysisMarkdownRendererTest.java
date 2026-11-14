@@ -50,6 +50,15 @@ class MatchAnalysisMarkdownRendererTest {
                 "| Axe (sua rota) | 47,0% | 1000 |",
                 "| 30 a 40 min | 45,0% | – |", "| 40 a 50 min | 40,0% | 60,0% |");
         assertThat(md.indexOf("## Contexto da partida")).isLessThan(md.indexOf("## Fase de rotas"));
+        assertThat(md).contains("## Objetivos", "Torres derrubadas: seu time 1, adversário 1.",
+                "| 5:00 | Adversário | tirou o first blood |", "| 11:40 | Seu time | derrubou a torre T1 do meio |",
+                "| 38:20 | Adversário | derrubou o barracks à distância do meio |");
+        assertThat(md).contains("## Lutas que mais mexeram no ouro",
+                "A OpenDota detectou 3 lutas com 3 ou mais mortes. Seu time ganhou mais ouro que o adversário em 1, "
+                        + "e você participou de 2.",
+                "| 10:00 a 10:40 | +300 | Ogre Magi | Axe (2) | participou |",
+                "| 31:20 a 32:10 | -1500 | Sniper, Ogre Magi (1 buyback) | nenhuma | participou e morreu |",
+                "| 35:00 a 35:30 | -200 | Ogre Magi | Axe | não participou |");
     }
 
     @Test
@@ -59,7 +68,8 @@ class MatchAnalysisMarkdownRendererTest {
         assertThat(md).contains("- **Posição principal (informada pelo jogador):** não informada",
                 "| | Nesta partida |\n|---|---:|", "Ainda não há Raio-X salvo desta conta",
                 "## Replay ainda não analisado");
-        assertThat(md).doesNotContain("Rota nesta partida", "## Mortes", "## Fase de rotas", "Dano causado");
+        assertThat(md).doesNotContain("Rota nesta partida", "## Mortes", "## Fase de rotas", "Dano causado",
+                "## Objetivos", "## Lutas");
         assertThat(md).as("draft, matchups e força por duração não dependem do replay")
                 .contains("## Contexto da partida", "| Axe | 47,0% | 1000 |");
     }

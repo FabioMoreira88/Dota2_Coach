@@ -23,4 +23,7 @@
    "kills_log":[{"time":300,"key":"npc_dota_hero_pudge"}]},
   {"player_slot":131,"hero_id":1,"isRadiant":false,"lane":3,"lane_role":1,"kills":10,"deaths":1,"assists":4,
    "kills_log":[{"time":1501,"key":"npc_dota_hero_pudge"}]}
- ]}
+ ],
+ "objectives":[{"time":854,"type":"building_kill","unit":"npc_dota_hero_pudge","key":"npc_dota_badguys_tower1_mid","slot":0,"player_slot":1},{"time":95,"type":"CHAT_MESSAGE_FIRSTBLOOD","slot":2,"key":0,"player_slot":130},{"time":1500,"type":"CHAT_MESSAGE_ROSHAN_KILL","team":3},{"time":1600,"type":"CHAT_MESSAGE_AEGIS","slot":2,"player_slot":130},{"time":1700,"type":"building_kill","unit":"npc_dota_creep_badguys_melee","key":"npc_dota_goodguys_range_rax_bot"},{"time":1750,"type":"building_kill","unit":"npc_dota_hero_invoker","key":"npc_dota_goodguys_fillers"},{"time":1800,"type":"CHAT_MESSAGE_COURIER_LOST","team":2}],
+ "teamfights":[{"start":1185,"end":1230,"last_death":1215,"deaths":3,"players":[{"deaths":1,"buybacks":0,"damage":800,"healing":0,"gold_delta":-150,"xp_delta":100,"killed":{}},{"deaths":1,"buybacks":1,"damage":400,"healing":0,"gold_delta":-200,"xp_delta":50,"killed":{}},{"deaths":0,"buybacks":0,"damage":2000,"healing":0,"gold_delta":600,"xp_delta":300,"killed":{"npc_dota_hero_pudge":1}},{"deaths":1,"buybacks":0,"damage":900,"healing":0,"gold_delta":250,"xp_delta":250,"killed":{"npc_dota_hero_axe":1}}]},{"start":300,"end":340,"deaths":3,"players":[{"deaths":1}]}]
+}
