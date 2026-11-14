@@ -2,14 +2,19 @@ package com.dota2coach.collector.mapper;
 
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
+import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Side;
+import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.MatchDetail;
+import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchRecord;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -87,14 +92,137 @@ public final class OpenDotaMatchMapper {
                         heroId,
                         atMinute(p.lastHitsByMinute(), 10),
                         atMinute(p.deniesByMinute(), 10),
-                        p.purchaseLog() == null ? List.of() : p.purchaseLog().stream()
-                                .filter(b -> b != null && b.time() != null && b.key() != null)
-                                .map(b -> new MatchDetail.Purchase(b.key(), b.time()))
-                                .toList(),
+                        purchases(p.purchaseLog()),
                         p.deathsLog() == null ? List.of() : p.deathsLog().stream()
                                 .filter(d -> d != null && d.time() != null)
                                 .map(d -> new MatchDetail.Death(d.time(), orZero(d.timeDead())))
                                 .toList()));
+    }
+
+    /**
+     * Converte a partida inteira para a análise de partida escolhida.
+     *
+     * @param heroIdByName id do herói pelo nome interno (ex.: "npc_dota_hero_lina"), para saber quem matou quem
+     * @return vazio se a partida ainda não tem resultado
+     */
+    public static Optional<AnalyzedMatch> toAnalyzedMatch(
+            OpenDotaMatchDetailResponse detail, Map<String, Integer> heroIdByName) {
+        if (detail == null || detail.players() == null || detail.radiantWin() == null || detail.duration() == null) {
+            return Optional.empty();
+        }
+        List<OpenDotaMatchDetailResponse.Player> players = detail.players().stream()
+                .filter(p -> p != null && p.heroId() != null && p.playerSlot() != null)
+                .toList();
+        return Optional.of(new AnalyzedMatch(
+                detail.matchId(),
+                Instant.ofEpochSecond(detail.startTime() == null ? 0 : detail.startTime()),
+                Duration.ofSeconds(detail.duration()),
+                detail.radiantWin(),
+                gameMode(detail.gameMode()),
+                Objects.equals(detail.lobbyType(), LOBBY_RANKED),
+                detail.version() != null,
+                orEmpty(detail.radiantGoldAdvantage()),
+                players.stream().map(p -> toMatchPlayer(p, players, heroIdByName)).toList()));
+    }
+
+    private static MatchPlayer toMatchPlayer(OpenDotaMatchDetailResponse.Player p,
+            List<OpenDotaMatchDetailResponse.Player> all, Map<String, Integer> heroIdByName) {
+        Side side = p.playerSlot() >= DIRE_SLOT_START ? Side.DIRE : Side.RADIANT;
+        Map<BenchmarkMetric, Double> percentiles = new EnumMap<>(BenchmarkMetric.class);
+        Double lastHitsAt10Percentile = null;
+        if (p.benchmarks() != null) {
+            for (BenchmarkMetric metric : BenchmarkMetric.values()) {
+                var b = p.benchmarks().get(metric.openDotaKey());
+                if (b != null && b.pct() != null) {
+                    percentiles.put(metric, b.pct());
+                }
+            }
+            var lhTen = p.benchmarks().get("lhten");
+            lastHitsAt10Percentile = lhTen == null ? null : lhTen.pct();
+        }
+        boolean parsed = p.lastHitsByMinute() != null && !p.lastHitsByMinute().isEmpty();
+        return new MatchPlayer(
+                p.playerSlot(),
+                p.accountId(),
+                p.heroId(),
+                side,
+                parsed ? lane(p.laneRole(), p.roaming()) : Lane.UNKNOWN,
+                p.lane(),
+                orZero(p.kills()),
+                orZero(p.deaths()),
+                orZero(p.assists()),
+                orZero(p.lastHits()),
+                orZero(p.denies()),
+                orZero(p.goldPerMin()),
+                orZero(p.xpPerMin()),
+                orZero(p.heroDamage()),
+                orZero(p.towerDamage()),
+                orZero(p.heroHealing()),
+                orZero(p.netWorth()),
+                orZero(p.level()),
+                orEmpty(p.lastHitsByMinute()),
+                orEmpty(p.deniesByMinute()),
+                orEmpty(p.goldByMinute()),
+                orEmpty(p.xpByMinute()),
+                purchases(p.purchaseLog()),
+                deaths(p, all, heroIdByName),
+                p.killsLog() == null ? List.of() : p.killsLog().stream()
+                        .filter(k -> k != null && k.time() != null)
+                        .map(k -> new MatchPlayer.Kill(k.time(), heroIdByName.get(k.key())))
+                        .toList(),
+                p.observerLog() == null ? 0 : p.observerLog().size(),
+                p.sentryLog() == null ? 0 : p.sentryLog().size(),
+                p.laneEfficiencyPct(),
+                percentiles,
+                lastHitsAt10Percentile);
+    }
+
+    /**
+     * Mortes com quem matou. Quando o deaths_log não diz o assassino, procura o abate no kills_log dos
+     * adversários (mesmo segundo, ou um de diferença).
+     */
+    private static List<MatchPlayer.Death> deaths(OpenDotaMatchDetailResponse.Player p,
+            List<OpenDotaMatchDetailResponse.Player> all, Map<String, Integer> heroIdByName) {
+        if (p.deathsLog() == null) {
+            return List.of();
+        }
+        String ownName = heroIdByName.entrySet().stream()
+                .filter(e -> e.getValue().equals(p.heroId()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+        return p.deathsLog().stream()
+                .filter(d -> d != null && d.time() != null)
+                .map(d -> {
+                    Integer killer = d.key() == null ? null : heroIdByName.get(d.key());
+                    if (killer == null && ownName != null) {
+                        killer = killerFromKillsLog(d.time(), ownName, p.heroId(), all);
+                    }
+                    return new MatchPlayer.Death(d.time(), orZero(d.timeDead()), killer);
+                })
+                .toList();
+    }
+
+    private static Integer killerFromKillsLog(int time, String victimName, int victimHeroId,
+            List<OpenDotaMatchDetailResponse.Player> all) {
+        return all.stream()
+                .filter(other -> !Objects.equals(other.heroId(), victimHeroId) && other.killsLog() != null)
+                .filter(other -> other.killsLog().stream().anyMatch(k -> k != null && k.time() != null
+                        && victimName.equals(k.key()) && Math.abs(k.time() - time) <= 1))
+                .map(OpenDotaMatchDetailResponse.Player::heroId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static List<MatchDetail.Purchase> purchases(List<OpenDotaMatchDetailResponse.Purchase> log) {
+        return log == null ? List.of() : log.stream()
+                .filter(b -> b != null && b.time() != null && b.key() != null)
+                .map(b -> new MatchDetail.Purchase(b.key(), b.time()))
+                .toList();
+    }
+
+    private static <T> List<T> orEmpty(List<T> list) {
+        return list == null ? List.of() : list.stream().filter(Objects::nonNull).toList();
     }
 
     private static Integer atMinute(List<Integer> byMinute, int minute) {

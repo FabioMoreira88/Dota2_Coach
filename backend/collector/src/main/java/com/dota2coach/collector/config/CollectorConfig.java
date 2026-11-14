@@ -2,6 +2,7 @@ package com.dota2coach.collector.config;
 
 import com.dota2coach.collector.client.opendota.OpenDotaClient;
 import com.dota2coach.collector.client.steam.SteamOpenIdClient;
+import com.dota2coach.collector.service.MatchDataService;
 import com.dota2coach.collector.service.PlayerDataService;
 import com.dota2coach.collector.service.ProfileSnapshotService;
 import com.dota2coach.collector.support.RequestRateLimiter;
@@ -67,6 +68,11 @@ public class CollectorConfig {
                 .expireAfterWrite(properties.cacheTtl())
                 .maximumSize(10_000)
                 .<Long, PlayerSummary>build());
+    }
+
+    @Bean
+    public MatchDataService matchDataService(OpenDotaClient client) {
+        return new MatchDataService(client);
     }
 
     @Bean

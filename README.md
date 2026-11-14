@@ -61,6 +61,21 @@ O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
 uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
 
+## Análise de uma partida (linha de comando)
+
+Analisa uma partida escolhida: fase de rotas contra o adversário da sua rota, mortes (quando e para quem), tempo
+dos itens principais, wards e ouro do time, comparando com o seu padrão no último Raio-X salvo. Precisa do banco
+no ar. Na pasta `backend`:
+
+```
+./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.partida.match-id=9083198111 --dota2coach.partida.account-id=34839344 --dota2coach.partida.position=mid"
+```
+
+O relatório sai em `docs/fase0/partida-<match-id>.md` (`--dota2coach.partida.output=...` muda o arquivo). O id
+da partida aparece no histórico do cliente do Dota, no Dotabuff e na OpenDota. Se o replay ainda não foi
+analisado, o comando pede a análise à OpenDota e o relatório sai só com o resumo: rode de novo uns 15 minutos
+depois.
+
 ## Comparativo de IA (linha de comando)
 
 Manda o Raio-X de uma conta para cada modelo configurado e salva os textos às cegas, para você dar notas antes
