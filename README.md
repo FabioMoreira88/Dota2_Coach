@@ -76,6 +76,11 @@ da partida aparece no histórico do cliente do Dota, no Dotabuff e na OpenDota. 
 analisado, o comando pede a análise à OpenDota e o relatório sai só com o resumo: rode de novo uns 15 minutos
 depois.
 
+Cada análise fica guardada no Postgres. Com `--dota2coach.partida.comment=true`, o coach (Claude) comenta a
+partida e diz se ela avançou nos focos do seu último diagnóstico. O comentário sai em
+`docs/fase0/comentario-partida-<match-id>.md` e também fica no banco. Precisa de `ANTHROPIC_API_KEY` no `.env`, e
+só roda com o replay analisado.
+
 ## Comparativo de IA (linha de comando)
 
 Manda o Raio-X de uma conta para cada modelo configurado e salva os textos às cegas, para você dar notas antes

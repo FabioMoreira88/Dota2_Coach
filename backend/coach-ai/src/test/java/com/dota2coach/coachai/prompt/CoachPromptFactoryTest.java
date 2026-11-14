@@ -21,4 +21,23 @@ class CoachPromptFactoryTest {
         assertThatThrownBy(() -> CoachPromptFactory.fromXRayReport("  "))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void partidaVaiEntreTagsComOsFocosAtuaisQuandoExistem() {
+        CoachPrompt prompt = CoachPromptFactory.fromMatchAnalysis("# Análise da partida 1\n", "## Foco 1: last hits");
+
+        assertThat(prompt.user()).contains("<partida>\n# Análise da partida 1\n</partida>",
+                "<focos_atuais>\n## Foco 1: last hits\n</focos_atuais>");
+        assertThat(prompt.system()).contains("você não viu o replay", "no máximo 3 lições", "Não sugira picks",
+                "no máximo 450 palavras");
+    }
+
+    @Test
+    void partidaSemFocosNaoMandaATag() {
+        CoachPrompt prompt = CoachPromptFactory.fromMatchAnalysis("# Análise da partida 1", null);
+
+        assertThat(prompt.user()).doesNotContain("focos_atuais");
+        assertThatThrownBy(() -> CoachPromptFactory.fromMatchAnalysis(" ", null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
