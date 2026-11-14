@@ -5,7 +5,6 @@ import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
 import com.dota2coach.analysis.metric.ProfileXRay.LaneLine;
-import com.dota2coach.analysis.metric.ProfileXRay.RoleLine;
 import com.dota2coach.analysis.metric.ProfileXRay.StatBlock;
 import com.dota2coach.analysis.metric.WinLoss;
 import com.dota2coach.analysis.metric.XRayCalculator;
@@ -36,7 +35,6 @@ public class XRayMarkdownRenderer {
         header(md, x);
         overview(md, x);
         heroes(md, x);
-        roles(md, x);
         lanes(md, x);
         fundamentals(md, x);
         items(md, x);
@@ -49,6 +47,8 @@ public class XRayMarkdownRenderer {
         md.append("# Raio-X de ").append(escape(x.playerName())).append("\n\n");
         md.append("- **Gerado em:** ").append(dateTime(x.collectedAt())).append('\n');
         md.append("- **Medalha:** ").append(medal(x.rankTier())).append('\n');
+        md.append("- **Posição principal (informada pelo jogador):** ")
+                .append(x.mainPosition() == null ? "não informada" : x.mainPosition().label()).append('\n');
         md.append("- **Fonte:** OpenDota, partidas \"significativas\" (sem Turbo e modos de evento)\n");
         md.append("- **Recorte recente:** últimas ").append(x.recentWindow()).append(" partidas\n\n");
     }
@@ -94,21 +94,6 @@ public class XRayMarkdownRenderer {
                     .append(" | ").append(h.bracketWinRate() == null ? "—" : pct(h.bracketWinRate()))
                     .append(" | ").append(h.bracketPickRate() == null ? "—" : pct(h.bracketPickRate()))
                     .append(" |\n");
-        }
-        md.append('\n');
-    }
-
-    private void roles(StringBuilder md, ProfileXRay x) {
-        md.append("## Funções dos heróis jogados\n\n");
-        if (x.roles().isEmpty()) {
-            md.append("_Sem dados._\n\n");
-            return;
-        }
-        md.append("Uma partida conta para cada função oficial do herói (um carry que também é nuker conta nas duas).\n\n");
-        md.append("| Função | Partidas | % das partidas | Vitória |\n|---|---:|---:|---:|\n");
-        for (RoleLine r : x.roles()) {
-            md.append("| ").append(escape(r.role())).append(" | ").append(r.result().games())
-                    .append(" | ").append(pct(r.share())).append(" | ").append(pct(r.result().winRate())).append(" |\n");
         }
         md.append('\n');
     }

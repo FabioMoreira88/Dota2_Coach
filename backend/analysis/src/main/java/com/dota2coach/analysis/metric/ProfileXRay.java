@@ -1,6 +1,7 @@
 package com.dota2coach.analysis.metric;
 
 import com.dota2coach.core.enums.Lane;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
 import java.time.Instant;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  *
  * @param recentWindow quantas partidas recentes entram nos recortes "recentes"
  * @param heroPoolSize heróis com pelo menos {@link XRayCalculator#POOL_MIN_GAMES} partidas no recorte recente
+ * @param mainPosition posição que o jogador informou, ou nulo se não informou
  * @param laneCoverage fração das partidas recentes com rota conhecida (replay analisado)
  */
 public record ProfileXRay(
@@ -17,13 +19,13 @@ public record ProfileXRay(
         Integer rankTier,
         RankBracket bracket,
         Instant collectedAt,
+        Position mainPosition,
         int recentWindow,
         Overview overview,
         List<HeroLine> heroes,
         int heroPoolSize,
         List<LaneLine> lanes,
         double laneCoverage,
-        List<RoleLine> roles,
         Fundamentals fundamentals,
         List<HeroItems> items,
         double shareOnWinningMetaHeroes) {
@@ -31,7 +33,6 @@ public record ProfileXRay(
     public ProfileXRay {
         heroes = List.copyOf(heroes);
         lanes = List.copyOf(lanes);
-        roles = List.copyOf(roles);
         items = List.copyOf(items);
     }
 
@@ -71,8 +72,6 @@ public record ProfileXRay(
 
     public record LaneLine(Lane lane, WinLoss result) {}
 
-    /** Função oficial do herói (Carry, Support...). Uma partida conta para cada função do herói. */
-    public record RoleLine(String role, WinLoss result, double share) {}
 
     /** Médias das últimas partidas comparadas com as anteriores do recorte recente. */
     public record Fundamentals(StatBlock latest, StatBlock previous) {}

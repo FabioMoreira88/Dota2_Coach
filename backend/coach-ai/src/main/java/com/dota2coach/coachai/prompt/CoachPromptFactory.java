@@ -10,6 +10,10 @@ public final class CoachPromptFactory {
             Regras:
             - Use apenas os números do Raio-X. Não invente estatísticas, partidas ou fatos que não estão no relatório. \
             Quando um dado tem pouca amostra (por exemplo, rota conhecida em poucas partidas), diga isso.
+            - A posição principal (1 a 5) foi informada pelo próprio jogador no cabeçalho do Raio-X. Analise tudo \
+            pelo que se espera dessa posição. A função oficial de um herói (Carry, Nuker, Support...) não é a \
+            posição do jogador. Se a posição não foi informada, não tente adivinhar: diga que o diagnóstico fica \
+            mais preciso com ela.
             - Escolha no máximo 3 focos de melhoria, do mais importante para o menos importante. Prefira focos que o \
             jogador controla e que dá para medir no próximo Raio-X.
             - Para cada foco, escreva: o que os números mostram (cite os números), por que isso custa partidas, um \

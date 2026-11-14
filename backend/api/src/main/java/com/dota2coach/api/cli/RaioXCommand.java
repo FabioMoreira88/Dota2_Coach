@@ -48,6 +48,10 @@ public class RaioXCommand implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         long accountId = properties.accountId();
+        if (properties.position() == null) {
+            log.warn("Raio-X: posição principal não informada. Use --dota2coach.raio-x.position=mid (ou carry,"
+                    + " offlane, soft-support, hard-support) para o coach focar na sua posição.");
+        }
         log.info("Raio-X: coletando dados da conta {} na OpenDota...", accountId);
         ProfileSnapshot snapshot = snapshotService.collect(accountId);
         log.info("Raio-X: {} partida(s) encontrada(s).", snapshot.matches().size());
@@ -62,7 +66,7 @@ public class RaioXCommand implements ApplicationRunner {
             }
         }
 
-        ProfileXRay xRay = calculator.calculate(snapshot);
+        ProfileXRay xRay = calculator.calculate(snapshot, properties.position());
         Path output = write(renderer.render(xRay));
         log.info("Raio-X: relatório salvo em {}", output);
     }

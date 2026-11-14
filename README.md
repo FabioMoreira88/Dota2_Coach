@@ -44,12 +44,14 @@ Gera um relatório em Markdown com heróis, funções, rotas, fundamentos, itens
 usando só dados públicos da OpenDota. Não precisa de banco nem do Redis. Na pasta `backend`:
 
 ```
-./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.raio-x.account-id=34839344"
+./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.raio-x.account-id=34839344 --dota2coach.raio-x.position=mid"
 ```
 
 O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `arguments`:
 
 - `--dota2coach.raio-x.output=caminho.md`: outro arquivo de saída (relativo a `backend/api`).
+- `--dota2coach.raio-x.position=...`: sua posição principal: `carry`, `mid`, `offlane`, `soft-support` (4) ou
+  `hard-support` (5). O coach analisa tudo pelo que se espera dessa posição; sem ela, o relatório avisa que não foi informada.
 - `--dota2coach.raio-x.parse-limit=0`: não pedir análise de replays (padrão: até 20 partidas recentes).
 
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo

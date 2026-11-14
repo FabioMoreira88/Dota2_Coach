@@ -18,6 +18,7 @@ import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
 import com.dota2coach.core.enums.Lane;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
 import com.dota2coach.core.model.MatchRecord;
 import java.util.ArrayList;
@@ -90,12 +91,10 @@ class XRayCalculatorTest {
     }
 
     @Test
-    void funcoesContamCadaFuncaoDoHeroi() {
-        ProfileXRay x = calculator.calculate(snapshot(53, history()));
-
-        assertThat(x.roles()).extracting(r -> r.role()).startsWith("Nuker", "Carry");
-        assertThat(x.roles().get(0).result().games()).isEqualTo(99);
-        assertThat(x.roles().get(0).share()).isEqualTo(0.99);
+    void posicaoInformadaVaiParaORaioX() {
+        assertThat(calculator.calculate(snapshot(53, history()), Position.MID).mainPosition())
+                .isEqualTo(Position.MID);
+        assertThat(calculator.calculate(snapshot(53, history())).mainPosition()).isNull();
     }
 
     @Test

@@ -6,12 +6,11 @@ import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
 import com.dota2coach.analysis.metric.ProfileXRay.ItemUse;
 import com.dota2coach.analysis.metric.ProfileXRay.LaneLine;
 import com.dota2coach.analysis.metric.ProfileXRay.Overview;
-import com.dota2coach.analysis.metric.ProfileXRay.RoleLine;
 import com.dota2coach.analysis.metric.ProfileXRay.StatBlock;
 import com.dota2coach.core.enums.GamePhase;
 import com.dota2coach.core.enums.Lane;
+import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.RankBracket;
-import com.dota2coach.core.model.Hero;
 import com.dota2coach.core.model.HeroItemPopularity;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.HeroMeta.PickWin;
@@ -58,6 +57,13 @@ public class XRayCalculator {
     static final Set<String> STANDALONE_FINAL_ITEMS = Set.of("blink");
 
     public ProfileXRay calculate(ProfileSnapshot snapshot) {
+        return calculate(snapshot, null);
+    }
+
+    /**
+     * @param mainPosition posição que o jogador informou; nulo quando ele não informou
+     */
+    public ProfileXRay calculate(ProfileSnapshot snapshot, Position mainPosition) {
         List<MatchRecord> all = snapshot.matches().stream()
                 .sorted(Comparator.comparing(MatchRecord::startTime).reversed())
                 .toList();
@@ -71,13 +77,13 @@ public class XRayCalculator {
                 snapshot.player().rankTier(),
                 bracket,
                 snapshot.collectedAt(),
+                mainPosition,
                 RECENT_WINDOW,
                 overview(all, recent, snapshot.collectedAt()),
                 heroes,
                 heroPoolSize(recent),
                 lanes(recent),
                 laneCoverage(recent),
-                roles(snapshot.heroes(), recent),
                 fundamentals(recent),
                 items(snapshot, all, heroes),
                 shareOnWinningMetaHeroes(recent, meta));
@@ -149,27 +155,6 @@ public class XRayCalculator {
     static double laneCoverage(List<MatchRecord> recent) {
         return recent.isEmpty() ? 0.0
                 : (double) recent.stream().filter(m -> m.lane() != Lane.UNKNOWN).count() / recent.size();
-    }
-
-    static List<RoleLine> roles(Map<Integer, Hero> heroes, List<MatchRecord> recent) {
-        Map<String, WinLoss> byRole = new HashMap<>();
-        for (MatchRecord m : recent) {
-            Hero hero = heroes.get(m.heroId());
-            if (hero == null) {
-                continue;
-            }
-            for (String role : hero.roles()) {
-                byRole.merge(role, new WinLoss(1, m.won() ? 1 : 0),
-                        (a, b) -> new WinLoss(a.games() + b.games(), a.wins() + b.wins()));
-            }
-        }
-        int total = recent.size();
-        return byRole.entrySet().stream()
-                .map(e -> new RoleLine(e.getKey(), e.getValue(),
-                        total == 0 ? 0.0 : (double) e.getValue().games() / total))
-                .sorted(Comparator.comparingInt((RoleLine r) -> r.result().games()).reversed()
-                        .thenComparing(RoleLine::role))
-                .toList();
     }
 
     static Fundamentals fundamentals(List<MatchRecord> recent) {
