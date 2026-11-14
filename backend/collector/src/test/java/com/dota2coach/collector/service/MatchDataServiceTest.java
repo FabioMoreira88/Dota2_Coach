@@ -12,6 +12,7 @@ import com.dota2coach.collector.support.RequestRateLimiter;
 import com.dota2coach.core.enums.DamageType;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.HeroDurations;
+import com.dota2coach.core.model.HeroItemTimings;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchSnapshot;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +61,9 @@ class MatchDataServiceTest {
         expect("/heroes/2/itemPopularity", "item-popularity.json");
         server.expect(requestTo(BASE + "/heroes/74/itemPopularity")).andRespond(withServerError());
         expect("/heroes/1/itemPopularity", "item-popularity.json");
+        expect("/scenarios/itemTimings?hero_id=14", "item-timings.json");
+        server.expect(requestTo(BASE + "/scenarios/itemTimings?hero_id=74")).andRespond(withServerError());
+        expect("/scenarios/itemTimings?hero_id=1", "item-timings.json");
 
         MatchSnapshot snapshot = service.collect(MATCH, 34839344L).orElseThrow();
 
@@ -81,6 +85,13 @@ class MatchDataServiceTest {
                 .as("só picks, na ordem do draft").containsExactly(14, 2, 74, 1);
         assertThat(me.damageDealtBySource()).containsEntry(MatchPlayer.BASIC_ATTACK, 12000L);
         assertThat(snapshot.itemPopularity()).as("herói 74 falhou e ficou de fora").containsOnlyKeys(14, 2, 1);
+        assertThat(snapshot.itemTimings()).as("só o seu herói e os adversários; o 74 falhou").containsOnlyKeys(14, 1);
+        assertThat(snapshot.itemTimings().get(14).byItem())
+                .as("linhas de outro herói ou sem item ficam de fora; números em texto são aceitos")
+                .containsOnlyKeys("blink");
+        assertThat(snapshot.itemTimings().get(14).byItem().get("blink"))
+                .containsExactly(new HeroItemTimings.Bin(900, 40, 22), new HeroItemTimings.Bin(1200, 60, 30));
+        assertThat(snapshot.itemTimings().get(1).byItem()).as("a linha é do herói 14, não do 1").isEmpty();
         server.verify();
     }
 

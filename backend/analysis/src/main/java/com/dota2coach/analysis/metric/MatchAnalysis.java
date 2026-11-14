@@ -22,6 +22,8 @@ import java.util.Map;
  * @param timeline objetivos e lutas que decidiram a partida (vazio sem replay analisado)
  * @param playersItems itens principais dos dez jogadores, seu time primeiro e você no topo (vazio sem replay
  *     analisado)
+ * @param itemTimings seus itens principais e os do adversário direto, comparados com quando os heróis costumam
+ *     terminá-los (vazio sem replay analisado)
  */
 public record MatchAnalysis(
         long matchId,
@@ -48,7 +50,8 @@ public record MatchAnalysis(
         Usual usual,
         Context context,
         Timeline timeline,
-        List<PlayerItems> playersItems) {
+        List<PlayerItems> playersItems,
+        List<ItemTimingLine> itemTimings) {
 
     public MatchAnalysis {
         percentiles = Map.copyOf(percentiles);
@@ -57,6 +60,7 @@ public record MatchAnalysis(
         items = List.copyOf(items);
         teamGold = List.copyOf(teamGold);
         playersItems = List.copyOf(playersItems);
+        itemTimings = List.copyOf(itemTimings);
     }
 
     /** Números finais do jogador na partida. */
@@ -146,6 +150,8 @@ public record MatchAnalysis(
      * @param damageReceivedByYou de que tipo foi o dano que você recebeu de heróis
      * @param matchups seu herói contra cada herói adversário, em partidas públicas recentes
      * @param power taxa de vitória média dos heróis de cada time em partidas públicas, por duração
+     * @param directOpponent herói adversário na posição que você enfrenta diretamente (2 contra 2, 1 contra 3, 4
+     *     contra 5), ou nulo sem posição informada ou sem replay analisado
      */
     public record Context(
             List<Pick> picks,
@@ -154,10 +160,11 @@ public record MatchAnalysis(
             List<TeamProfile> teams,
             DamageShare damageReceivedByYou,
             List<Matchup> matchups,
-            List<PhasePower> power) {
+            List<PhasePower> power,
+            String directOpponent) {
 
         public static final Context EMPTY =
-                new Context(List.of(), false, null, List.of(), DamageShare.NONE, List.of(), List.of());
+                new Context(List.of(), false, null, List.of(), DamageShare.NONE, List.of(), List.of(), null);
 
         public Context {
             picks = List.copyOf(picks);
@@ -167,7 +174,15 @@ public record MatchAnalysis(
         }
     }
 
-    public record Pick(Integer order, String heroName, boolean yourTeam, boolean you) {}
+    /**
+     * @param position posição de 1 a 5: a informada, para você, ou a estimada pela rota e pelo farm, para os
+     *     outros; nulo quando não se sabe
+     * @param positionBasis de onde veio a posição estimada (ex.: "rota segura, menor patrimônio do time"), ou
+     *     nulo para a sua posição e quando não há estimativa
+     * @param unusualPick se o herói foi jogado numa posição que não combina com as funções oficiais dele
+     */
+    public record Pick(Integer order, String heroName, boolean yourTeam, boolean you, Integer position,
+            String positionBasis, boolean unusualPick) {}
 
     /**
      * @param damageDealt de que tipo foi o dano que o time causou em heróis
@@ -195,9 +210,11 @@ public record MatchAnalysis(
 
     /**
      * @param laneOpponent se o herói passou a fase de rotas na sua rota
+     * @param directOpponent se é o adversário direto da sua posição
      * @param winRate taxa de vitória do seu herói contra ele
      */
-    public record Matchup(String heroName, boolean laneOpponent, int games, double winRate) {}
+    public record Matchup(String heroName, boolean laneOpponent, boolean directOpponent, int games,
+            double winRate) {}
 
     /** Taxa de vitória média dos heróis de cada time numa faixa de duração, ou nulo sem amostra. */
     public record PhasePower(String phase, Double yourTeam, Double enemyTeam) {}
@@ -263,4 +280,16 @@ public record MatchAnalysis(
     }
 
     public record ItemTime(String itemName, int timeSeconds) {}
+
+    /**
+     * Quando um item principal saiu, comparado com as partidas públicas recentes do herói.
+     *
+     * @param usualRange faixa de tempo em que o herói mais costuma terminar o item (a faixa da mediana), ex.:
+     *     "12 a 15 min"
+     * @param comparison "antes do normal", "no normal" ou "depois do normal"
+     * @param winRate taxa de vitória do herói quando termina o item na mesma faixa de tempo, ou nulo com pouca
+     *     amostra ou depois da última faixa
+     */
+    public record ItemTimingLine(String heroName, boolean you, String itemName, int timeSeconds, String usualRange,
+            String comparison, Double winRate) {}
 }

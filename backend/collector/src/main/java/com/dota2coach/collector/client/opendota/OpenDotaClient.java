@@ -9,6 +9,7 @@ import com.dota2coach.collector.dto.opendota.OpenDotaHeroMatchupResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaItemTimingResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaParseRequestResponse;
@@ -120,6 +121,13 @@ public class OpenDotaClient {
     }
 
     /** Partidas públicas recentes do herói contra cada outro herói, com vitórias. */
+    public List<OpenDotaItemTimingResponse> getItemTimings(int heroId) {
+        List<OpenDotaItemTimingResponse> timings =
+                get(uri -> uri.path("/scenarios/itemTimings").queryParam("hero_id", heroId).build(),
+                        new ParameterizedTypeReference<List<OpenDotaItemTimingResponse>>() {});
+        return timings == null ? List.of() : timings;
+    }
+
     public List<OpenDotaHeroMatchupResponse> getHeroMatchups(int heroId) {
         List<OpenDotaHeroMatchupResponse> matchups = get(uri -> uri.path("/heroes/{id}/matchups").build(heroId),
                 new ParameterizedTypeReference<List<OpenDotaHeroMatchupResponse>>() {});

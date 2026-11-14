@@ -9,6 +9,7 @@ import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.HeroDurations;
 import com.dota2coach.core.model.HeroItemPopularity;
+import com.dota2coach.core.model.HeroItemTimings;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchSnapshot;
@@ -54,7 +55,8 @@ public class MatchDataService {
                 damageTypes(),
                 heroDurations(m),
                 matchups(m, accountId),
-                itemPopularity(m)));
+                itemPopularity(m),
+                itemTimings(m, accountId)));
     }
 
     /** Matchups do herói do jogador. Se a conta não está na partida ou a OpenDota falha, sai vazio. */
@@ -114,6 +116,30 @@ public class MatchDataService {
             }
         }
         return popularity;
+    }
+
+    /**
+     * Tempos de item do herói do jogador e dos cinco adversários, só com replay analisado. Um herói que falha
+     * fica de fora.
+     */
+    private Map<Integer, HeroItemTimings> itemTimings(AnalyzedMatch match, long accountId) {
+        Map<Integer, HeroItemTimings> timings = new HashMap<>();
+        MatchPlayer me = match.player(accountId).orElse(null);
+        if (!match.replayParsed() || me == null) {
+            return timings;
+        }
+        for (MatchPlayer player : match.players()) {
+            if (player.side() == me.side() && !player.equals(me)) {
+                continue;
+            }
+            try {
+                timings.put(player.heroId(), OpenDotaReferenceMapper.toItemTimings(
+                        player.heroId(), openDotaClient.getItemTimings(player.heroId())));
+            } catch (ExternalServiceUnavailableException e) {
+                log.warn("OpenDota: sem tempos de item do herói {}: {}", player.heroId(), e.getMessage());
+            }
+        }
+        return timings;
     }
 
     /** Pede à OpenDota a análise do replay. Os dados aparecem minutos depois. */

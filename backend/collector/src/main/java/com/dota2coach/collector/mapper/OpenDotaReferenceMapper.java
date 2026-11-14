@@ -8,6 +8,7 @@ import com.dota2coach.collector.dto.opendota.OpenDotaHeroMatchupResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaHeroStatsResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemConstant;
 import com.dota2coach.collector.dto.opendota.OpenDotaItemPopularityResponse;
+import com.dota2coach.collector.dto.opendota.OpenDotaItemTimingResponse;
 import com.dota2coach.core.enums.BenchmarkMetric;
 import com.dota2coach.core.enums.DamageType;
 import com.dota2coach.core.enums.GamePhase;
@@ -16,10 +17,12 @@ import com.dota2coach.core.model.Hero;
 import com.dota2coach.core.model.HeroBenchmark;
 import com.dota2coach.core.model.HeroDurations;
 import com.dota2coach.core.model.HeroItemPopularity;
+import com.dota2coach.core.model.HeroItemTimings;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.HeroMeta.PickWin;
 import com.dota2coach.core.model.HeroMeta;
 import com.dota2coach.core.model.Item;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -138,6 +141,17 @@ public final class OpenDotaReferenceMapper {
                 .map(d -> new HeroDurations.Bin(d.durationBin(), d.gamesPlayed(), d.wins()))
                 .sorted(Comparator.comparingInt(HeroDurations.Bin::fromSeconds))
                 .toList());
+    }
+
+    /** Tempos de item do herói. Linhas de outro herói ou incompletas ficam de fora. */
+    public static HeroItemTimings toItemTimings(int heroId, List<OpenDotaItemTimingResponse> timings) {
+        Map<String, List<HeroItemTimings.Bin>> byItem = new HashMap<>();
+        timings.stream()
+                .filter(t -> t != null && t.item() != null && t.time() != null && t.games() != null
+                        && t.wins() != null && Objects.equals(t.heroId(), heroId))
+                .forEach(t -> byItem.computeIfAbsent(t.item(), k -> new ArrayList<>())
+                        .add(new HeroItemTimings.Bin(t.time(), t.games(), t.wins())));
+        return new HeroItemTimings(heroId, byItem);
     }
 
     public static HeroMatchups toHeroMatchups(int heroId, List<OpenDotaHeroMatchupResponse> matchups) {
