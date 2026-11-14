@@ -41,7 +41,8 @@ Pré-requisitos: JDK 21, Docker Desktop, Node 22.
 ## Raio-X do perfil (linha de comando)
 
 Gera um relatório em Markdown com heróis, funções, rotas, fundamentos, itens e aderência ao meta de uma conta,
-usando só dados públicos da OpenDota. Não precisa de banco nem do Redis. Na pasta `backend`:
+usando só dados públicos da OpenDota. Cada Raio-X fica guardado no Postgres, que é a base do acompanhamento de
+evolução; então suba o banco antes (passo 2 de "Rodando localmente"). Na pasta `backend`:
 
 ```
 ./mvnw -pl api -am spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --dota2coach.raio-x.account-id=34839344 --dota2coach.raio-x.position=mid"
@@ -52,6 +53,9 @@ O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `
 - `--dota2coach.raio-x.output=caminho.md`: outro arquivo de saída (relativo a `backend/api`).
 - `--dota2coach.raio-x.position=...`: sua posição principal: `carry`, `mid`, `offlane`, `soft-support` (4) ou
   `hard-support` (5). O coach analisa tudo pelo que se espera dessa posição; sem ela, o relatório avisa que não foi informada.
+- `--dota2coach.raio-x.diagnose=true`: logo depois do Raio-X, gera o diagnóstico do coach com o Claude
+  (precisa de `ANTHROPIC_API_KEY` no `.env`; custa cerca de US$ 0,11). O texto sai em `docs/fase0/diagnostico-<id>.md`
+  e também fica no banco, ligado ao Raio-X.
 - `--dota2coach.raio-x.parse-limit=0`: não pedir análise de replays (padrão: até 20 partidas recentes).
 
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
