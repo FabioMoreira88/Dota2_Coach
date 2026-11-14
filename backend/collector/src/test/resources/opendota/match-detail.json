@@ -1,0 +1,7 @@
+{"match_id":9083198111,"duration":2400,"radiant_win":true,"players":[
+ {"player_slot":0,"hero_id":84,"lh_t":[0,1,2,3,4,5,6,7,8,9,12,15],"dn_t":[0,0,0,1,1,1,2,2,2,3,3,3],
+  "purchase_log":[{"time":-80,"key":"tango"},{"time":420,"key":"arcane_boots"},{"time":900,"key":"blink","charges":1}],
+  "deaths_log":[{"time":300,"key":"npc_dota_hero_lina","time_dead":12},{"time":1500,"key":"npc_dota_hero_axe","time_dead":40}],
+  "kills_log":[],"damage_targets":{"x":{"y":1}}},
+ {"player_slot":128,"hero_id":35,"lh_t":null}
+]}

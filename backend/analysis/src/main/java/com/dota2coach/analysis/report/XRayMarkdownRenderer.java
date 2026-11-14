@@ -1,7 +1,11 @@
 package com.dota2coach.analysis.report;
 
 import com.dota2coach.analysis.metric.ProfileXRay;
+import com.dota2coach.analysis.metric.ProfileXRay.DeathPhase;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroBenchmarkLine;
+import com.dota2coach.analysis.metric.ProfileXRay.HeroLaning;
+import com.dota2coach.analysis.metric.ProfileXRay.ItemTiming;
+import com.dota2coach.analysis.metric.ProfileXRay.MatchDetails;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroItems;
 import com.dota2coach.analysis.metric.ProfileXRay.MetricComparison;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroLine;
@@ -42,6 +46,7 @@ public class XRayMarkdownRenderer {
         fundamentals(md, x);
         benchmarks(md, x);
         items(md, x);
+        details(md, x);
         meta(md, x);
         dotabuffCheck(md, x);
         return md.toString();
@@ -220,6 +225,52 @@ public class XRayMarkdownRenderer {
                     .append(hi.missingMeta().isEmpty() ? "nenhum" : String.join(", ", hi.missingMeta()))
                     .append("\n\n");
         }
+    }
+
+    private void details(StringBuilder md, ProfileXRay x) {
+        MatchDetails d = x.details();
+        md.append("## Partidas com replay analisado\n\n");
+        if (d.analyzedMatches() == 0) {
+            md.append("_Nenhuma partida recente com replay analisado. Rode de novo uns 15 minutos depois do primeiro Raio-X._\n\n");
+            return;
+        }
+        md.append("Detalhes de ").append(matches(d.analyzedMatches())).append(" recentes que a OpenDota analisou.\n\n");
+
+        md.append("### Fase de rotas\n\n");
+        md.append("- **Last hits aos 10 min:** ").append(d.lastHitsAt10() == null ? "—" : dec(d.lastHitsAt10()))
+                .append(" em média\n");
+        md.append("- **Denies aos 10 min:** ").append(d.deniesAt10() == null ? "—" : dec(d.deniesAt10()))
+                .append(" em média\n\n");
+        if (!d.laningByHero().isEmpty()) {
+            md.append("| Herói | Partidas | Last hits aos 10 min |\n|---|---:|---:|\n");
+            for (HeroLaning h : d.laningByHero()) {
+                md.append("| ").append(escape(h.heroName())).append(" | ").append(h.matches()).append(" | ")
+                        .append(dec(h.lastHitsAt10())).append(" |\n");
+            }
+            md.append('\n');
+        }
+
+        md.append("### Quando você morre\n\n");
+        md.append("Tempo morto: ").append(dec(d.secondsDeadPerMatch() / 60.0)).append(" min por partida, em média.\n\n");
+        md.append("| Fase | Mortes por partida | % das mortes |\n|---|---:|---:|\n");
+        for (DeathPhase p : d.deathsByPhase()) {
+            md.append("| ").append(p.label()).append(" | ").append(dec(p.deathsPerMatch())).append(" | ")
+                    .append(pct(p.share())).append(" |\n");
+        }
+        md.append('\n');
+
+        md.append("### Tempo dos itens principais\n\n");
+        if (d.itemTimings().isEmpty()) {
+            md.append("_Poucas partidas analisadas por herói (mínimo de 3)._\n\n");
+            return;
+        }
+        md.append("Mediana do minuto da primeira compra, por herói.\n\n");
+        md.append("| Herói | Item | Partidas | Minuto (mediana) |\n|---|---|---:|---:|\n");
+        for (ItemTiming t : d.itemTimings()) {
+            md.append("| ").append(escape(t.heroName())).append(" | ").append(escape(t.itemName())).append(" | ")
+                    .append(t.matches()).append(" | ").append(dec(t.medianMinute())).append(" |\n");
+        }
+        md.append('\n');
     }
 
     private static String itemUse(ItemUse use) {

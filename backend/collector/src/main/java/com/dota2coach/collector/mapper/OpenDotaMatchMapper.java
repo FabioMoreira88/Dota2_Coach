@@ -1,9 +1,11 @@
 package com.dota2coach.collector.mapper;
 
+import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Side;
+import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchRecord;
 import java.time.Duration;
 import java.time.Instant;
@@ -65,6 +67,38 @@ public final class OpenDotaMatchMapper {
 
     public static List<MatchRecord> toMatchRecords(List<OpenDotaMatchResponse> matches) {
         return matches.stream().map(OpenDotaMatchMapper::toMatchRecord).flatMap(Optional::stream).toList();
+    }
+
+    /**
+     * Extrai os detalhes do jogador (identificado pelo herói, único na partida) de uma partida analisada.
+     *
+     * @return vazio se o herói não está na partida ou se o replay não foi analisado (sem last hits por minuto)
+     */
+    public static Optional<MatchDetail> toMatchDetail(OpenDotaMatchDetailResponse detail, int heroId) {
+        if (detail == null || detail.players() == null) {
+            return Optional.empty();
+        }
+        return detail.players().stream()
+                .filter(p -> p != null && Objects.equals(p.heroId(), heroId))
+                .filter(p -> p.lastHitsByMinute() != null && !p.lastHitsByMinute().isEmpty())
+                .findFirst()
+                .map(p -> new MatchDetail(
+                        detail.matchId(),
+                        heroId,
+                        atMinute(p.lastHitsByMinute(), 10),
+                        atMinute(p.deniesByMinute(), 10),
+                        p.purchaseLog() == null ? List.of() : p.purchaseLog().stream()
+                                .filter(b -> b != null && b.time() != null && b.key() != null)
+                                .map(b -> new MatchDetail.Purchase(b.key(), b.time()))
+                                .toList(),
+                        p.deathsLog() == null ? List.of() : p.deathsLog().stream()
+                                .filter(d -> d != null && d.time() != null)
+                                .map(d -> new MatchDetail.Death(d.time(), orZero(d.timeDead())))
+                                .toList()));
+    }
+
+    private static Integer atMinute(List<Integer> byMinute, int minute) {
+        return byMinute == null || byMinute.size() <= minute ? null : byMinute.get(minute);
     }
 
     /** Códigos de game_mode da Valve. */

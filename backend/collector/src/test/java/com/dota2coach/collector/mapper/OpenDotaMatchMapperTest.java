@@ -2,10 +2,12 @@ package com.dota2coach.collector.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.dota2coach.collector.dto.opendota.OpenDotaMatchDetailResponse;
 import com.dota2coach.collector.dto.opendota.OpenDotaMatchResponse;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.Side;
+import com.dota2coach.core.model.MatchDetail;
 import com.dota2coach.core.model.MatchRecord;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,5 +96,22 @@ class OpenDotaMatchMapperTest {
         assertThat(OpenDotaMatchMapper.gameMode(2)).isEqualTo(GameMode.CAPTAINS_MODE);
         assertThat(OpenDotaMatchMapper.gameMode(null)).isEqualTo(GameMode.OTHER);
         assertThat(OpenDotaMatchMapper.gameMode(19)).isEqualTo(GameMode.OTHER);
+    }
+
+    @Test
+    void extraiDetalhesDoJogadorPeloHeroi() throws IOException {
+        OpenDotaMatchDetailResponse detail = new ObjectMapper().readValue(
+                new org.springframework.core.io.ClassPathResource("opendota/match-detail.json").getInputStream(),
+                OpenDotaMatchDetailResponse.class);
+
+        MatchDetail ogre = OpenDotaMatchMapper.toMatchDetail(detail, 84).orElseThrow();
+
+        assertThat(ogre.lastHitsAt10()).isEqualTo(12);
+        assertThat(ogre.deniesAt10()).isEqualTo(3);
+        assertThat(ogre.purchases()).extracting(MatchDetail.Purchase::itemKey)
+                .containsExactly("tango", "arcane_boots", "blink");
+        assertThat(ogre.deaths()).containsExactly(new MatchDetail.Death(300, 12), new MatchDetail.Death(1500, 40));
+        assertThat(OpenDotaMatchMapper.toMatchDetail(detail, 35)).as("sem lh_t: replay não analisado").isEmpty();
+        assertThat(OpenDotaMatchMapper.toMatchDetail(detail, 1)).as("herói fora da partida").isEmpty();
     }
 }

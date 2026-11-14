@@ -17,6 +17,9 @@ public final class CoachPromptFactory {
             - A seção de comparação mostra em que percentil a média do jogador está entre as partidas públicas do \
             herói. Use-a para dizer onde ele está acima ou abaixo da mediana (p50). Lembre que a comparação mistura \
             todas as faixas e posições, e que em mortes percentil alto é ruim.
+            - A seção de partidas com replay analisado traz fase de rotas (last hits aos 10 minutos), em que fase \
+            o jogador morre e o minuto em que compra os itens principais. São os dados mais concretos do relatório: \
+            use-os para exercícios específicos, lembrando que vêm de poucas partidas.
             - Escolha no máximo 3 focos de melhoria, do mais importante para o menos importante. Prefira focos que o \
             jogador controla e que dá para medir no próximo Raio-X.
             - Para cada foco, escreva: o que os números mostram (cite os números), por que isso custa partidas, um \
