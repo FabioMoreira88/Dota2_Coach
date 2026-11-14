@@ -59,21 +59,25 @@ final class MatchContextCalculator {
             Map<Integer, PositionEstimator.Estimate> estimated, MatchPlayer directOpponent) {
         AnalyzedMatch match = snapshot.match();
         Side mySide = me.side();
-        boolean orderKnown = !match.picks().isEmpty() && match.picks().stream().allMatch(p -> p.order() != null);
-        List<Pick> picks = match.picks().stream()
+        // Um pick de herói que não jogou (o jogador trocou de herói depois) fica de fora, e a ordem é renumerada.
+        List<AnalyzedMatch.DraftPick> played = match.picks().stream()
+                .filter(p -> match.players().stream()
+                        .anyMatch(pl -> pl.heroId() == p.heroId() && pl.side() == p.side()))
                 .sorted(Comparator.comparing(AnalyzedMatch.DraftPick::order,
                         Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(p -> {
-                    boolean you = p.heroId() == me.heroId() && p.side() == mySide;
-                    PositionEstimator.Estimate estimate = you ? null : estimated.get(p.heroId());
-                    Integer pos = you ? (position == null ? null : position.number())
-                            : estimate == null ? null : estimate.position();
-                    Hero hero = snapshot.heroes().get(p.heroId());
-                    boolean unusual = pos != null && hero != null && PositionEstimator.unusual(hero.roles(), pos);
-                    return new Pick(p.order(), snapshot.heroName(p.heroId()), p.side() == mySide, you, pos,
-                            estimate == null ? null : estimate.basis(), unusual);
-                })
                 .toList();
+        boolean orderKnown = !played.isEmpty() && played.stream().allMatch(p -> p.order() != null);
+        List<Pick> picks = new ArrayList<>();
+        for (AnalyzedMatch.DraftPick p : played) {
+            boolean you = p.heroId() == me.heroId() && p.side() == mySide;
+            PositionEstimator.Estimate estimate = you ? null : estimated.get(p.heroId());
+            Integer pos = you ? (position == null ? null : position.number())
+                    : estimate == null ? null : estimate.position();
+            Hero hero = snapshot.heroes().get(p.heroId());
+            boolean unusual = pos != null && hero != null && PositionEstimator.unusual(hero.roles(), pos);
+            picks.add(new Pick(orderKnown ? picks.size() + 1 : null, snapshot.heroName(p.heroId()),
+                    p.side() == mySide, you, pos, estimate == null ? null : estimate.basis(), unusual));
+        }
         Integer yourTeamPickNumber = null;
         if (orderKnown) {
             int n = 0;

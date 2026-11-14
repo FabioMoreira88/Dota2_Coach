@@ -22,6 +22,8 @@ public final class Matches {
 
     public static final long ACCOUNT = 34839344L;
     public static final long MATCH_ID = 9083198111L;
+    /** Pickado pelo Dire, mas o jogador trocou de herói: não está entre os jogadores. */
+    static final int JUGGERNAUT = 8;
 
     private Matches() {}
 
@@ -62,7 +64,8 @@ public final class Matches {
                 GameMode.ALL_PICK, true, parsed, goldAdv,
                 List.of(new AnalyzedMatch.DraftPick(1, Snapshots.AXE, Side.DIRE),
                         new AnalyzedMatch.DraftPick(2, Snapshots.OGRE, Side.RADIANT),
-                        new AnalyzedMatch.DraftPick(3, Snapshots.SNIPER, Side.RADIANT)),
+                        new AnalyzedMatch.DraftPick(3, JUGGERNAUT, Side.DIRE),
+                        new AnalyzedMatch.DraftPick(4, Snapshots.SNIPER, Side.RADIANT)),
                 List.of(me, ally, rival), parsed ? objectives() : List.of(), parsed ? teamfights() : List.of());
         return new MatchSnapshot(match, Snapshots.heroes(), Snapshots.items(), damageTypes(), durations(),
                 new HeroMatchups(Snapshots.SNIPER, Map.of(Snapshots.AXE, new HeroMatchups.Record(1000, 470),

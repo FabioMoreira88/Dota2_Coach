@@ -64,7 +64,9 @@ class MatchAnalysisCalculatorTest {
         MatchAnalysis.Context c = calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).context();
 
         assertThat(c.pickOrderKnown()).isTrue();
-        assertThat(c.picks()).as("a sua posição é a informada; a dos outros, estimada pela rota e pelo farm")
+        assertThat(c.picks())
+                .as("a sua posição é a informada; a dos outros, estimada pela rota e pelo farm; o Juggernaut, que "
+                        + "não jogou, sai e a ordem é renumerada")
                 .containsExactly(
                         new MatchAnalysis.Pick(1, "Axe", false, false, 2, "meio, maior patrimônio do time", false),
                         new MatchAnalysis.Pick(2, "Ogre Magi", true, false, 1,
@@ -176,6 +178,16 @@ class MatchAnalysisCalculatorTest {
 
         assertThat(MatchAnalysisCalculator.teamGold(longMatch, me)).extracting(TeamGold::minute)
                 .containsExactly(10, 20, 30, 40, 50);
+    }
+
+    @Test
+    void pickForaDoComumSoParaCarryDe5ESuporteDe1() {
+        List<String> spiritBreaker = List.of("Carry", "Initiator", "Disabler", "Durable", "Escape");
+
+        assertThat(PositionEstimator.unusual(spiritBreaker, 4)).as("posição 4 varia muito").isFalse();
+        assertThat(PositionEstimator.unusual(spiritBreaker, 5)).isTrue();
+        assertThat(PositionEstimator.unusual(List.of("Support", "Nuker"), 1)).isTrue();
+        assertThat(PositionEstimator.unusual(List.of("Carry", "Support"), 5)).isFalse();
     }
 
     @Test
