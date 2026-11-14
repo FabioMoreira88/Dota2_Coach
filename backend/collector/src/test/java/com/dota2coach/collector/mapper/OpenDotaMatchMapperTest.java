@@ -163,7 +163,8 @@ class OpenDotaMatchMapperTest {
         var detail = new OpenDotaMatchDetailResponse(1L, 0L, 1800, true, 22, 7, null, null, null, List.of(),
                 List.of(new OpenDotaMatchDetailResponse.Player(130, null, 74, false, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null)), null, null);
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null)), null, null);
 
         AnalyzedMatch match = OpenDotaMatchMapper.toAnalyzedMatch(detail, HERO_IDS).orElseThrow();
         assertThat(match.picks()).containsExactly(new AnalyzedMatch.DraftPick(null, 74, Side.DIRE));
@@ -197,6 +198,26 @@ class OpenDotaMatchMapperTest {
                 new AnalyzedMatch.FightPlayer(2, Side.RADIANT, 1, -200, 400, 0, 1),
                 new AnalyzedMatch.FightPlayer(74, Side.DIRE, 0, 600, 2000, 0, 0),
                 new AnalyzedMatch.FightPlayer(1, Side.DIRE, 1, 250, 900, 0, 0));
+    }
+
+    @Test
+    void numerosExtrasDoReplay() throws IOException {
+        MatchPlayer.ReplayStats stats = fullMatch().player(34839344L).orElseThrow().stats();
+
+        assertThat(stats.damageTakenFromHeroes()).as("herói desconhecido não vira creep nem herói")
+                .containsOnly(java.util.Map.entry(74, 3000L));
+        assertThat(stats.damageTakenFromOthers()).isEqualTo(500);
+        assertThat(stats.abilityUses()).containsEntry("pudge_meat_hook", 20L);
+        assertThat(stats.itemUses()).containsEntry("blink", 5L);
+        assertThat(stats.stunSeconds()).isEqualTo(2.5);
+        assertThat(stats.goldByReason()).as("código que não é número fica de fora")
+                .containsOnly(java.util.Map.entry(13, 5000L), java.util.Map.entry(1, -400L));
+        assertThat(stats.xpByReason()).containsOnly(java.util.Map.entry(2, 7000L));
+        assertThat(stats.runes()).containsOnly(java.util.Map.entry(5, 2L));
+        assertThat(stats.campsStacked()).isEqualTo(1);
+        assertThat(stats.observerKills()).isEqualTo(2);
+        assertThat(fullMatch().players().get(1).stats()).as("sem os campos, fica tudo zerado")
+                .isEqualTo(MatchPlayer.ReplayStats.EMPTY);
     }
 
     @Test

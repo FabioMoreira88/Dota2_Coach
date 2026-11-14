@@ -74,7 +74,8 @@ public class MatchAnalysisCalculator {
                 MatchContextCalculator.calculate(snapshot, me, position, estimated, direct),
                 MatchTimelineCalculator.calculate(snapshot, me),
                 MatchItemsCalculator.calculate(snapshot, me, itemsByKey),
-                MatchItemTimingCalculator.calculate(snapshot, me, direct, itemsByKey));
+                MatchItemTimingCalculator.calculate(snapshot, me, direct, itemsByKey),
+                MatchPlayCalculator.calculate(snapshot, me, itemsByKey));
     }
 
     static Double killParticipation(AnalyzedMatch match, MatchPlayer me) {

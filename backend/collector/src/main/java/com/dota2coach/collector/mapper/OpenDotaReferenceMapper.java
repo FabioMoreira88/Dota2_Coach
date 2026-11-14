@@ -135,6 +135,17 @@ public final class OpenDotaReferenceMapper {
         return types;
     }
 
+    /** Nome de exibição de cada habilidade pelo nome interno. Habilidades sem nome ficam de fora. */
+    public static Map<String, String> toAbilityNames(Map<String, OpenDotaAbilityConstant> abilities) {
+        Map<String, String> names = new HashMap<>();
+        abilities.forEach((key, ability) -> {
+            if (key != null && ability != null && ability.displayName() != null && !ability.displayName().isBlank()) {
+                names.put(key, ability.displayName());
+            }
+        });
+        return names;
+    }
+
     public static HeroDurations toHeroDurations(int heroId, List<OpenDotaHeroDurationResponse> durations) {
         return new HeroDurations(heroId, durations.stream()
                 .filter(d -> d != null && d.durationBin() != null && d.gamesPlayed() != null && d.wins() != null)

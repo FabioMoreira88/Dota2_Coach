@@ -18,6 +18,7 @@ import java.util.Map;
  * @param damageDealtBySource dano causado em heróis por origem: habilidade ou item pelo nome interno, ou
  *     {@link #BASIC_ATTACK}
  * @param damageReceivedBySource dano recebido de heróis, pela mesma origem
+ * @param stats números extras do replay analisado ({@link ReplayStats#EMPTY} sem replay)
  */
 public record MatchPlayer(
         int slot,
@@ -51,7 +52,8 @@ public record MatchPlayer(
         Map<BenchmarkMetric, Double> benchmarkPercentiles,
         Double lastHitsAt10Percentile,
         Map<String, Long> damageDealtBySource,
-        Map<String, Long> damageReceivedBySource) {
+        Map<String, Long> damageReceivedBySource,
+        ReplayStats stats) {
 
     /** Origem do dano de ataque básico (a OpenDota usa "null"). */
     public static final String BASIC_ATTACK = "null";
@@ -67,6 +69,89 @@ public record MatchPlayer(
         benchmarkPercentiles = Map.copyOf(benchmarkPercentiles);
         damageDealtBySource = Map.copyOf(damageDealtBySource);
         damageReceivedBySource = Map.copyOf(damageReceivedBySource);
+        stats = stats == null ? ReplayStats.EMPTY : stats;
+    }
+
+    /** Jogador sem os números extras do replay. */
+    public MatchPlayer(
+            int slot,
+            Long accountId,
+            int heroId,
+            Side side,
+            Lane lane,
+            Integer physicalLane,
+            int kills,
+            int deaths,
+            int assists,
+            int lastHits,
+            int denies,
+            int goldPerMin,
+            int xpPerMin,
+            int heroDamage,
+            int towerDamage,
+            int heroHealing,
+            int netWorth,
+            int level,
+            List<Integer> lastHitsByMinute,
+            List<Integer> deniesByMinute,
+            List<Integer> goldByMinute,
+            List<Integer> xpByMinute,
+            List<MatchDetail.Purchase> purchases,
+            List<Death> deathLog,
+            List<Kill> killLog,
+            int observersPlaced,
+            int sentriesPlaced,
+            Integer laneEfficiencyPct,
+            Map<BenchmarkMetric, Double> benchmarkPercentiles,
+            Double lastHitsAt10Percentile,
+            Map<String, Long> damageDealtBySource,
+            Map<String, Long> damageReceivedBySource) {
+        this(slot, accountId, heroId, side, lane, physicalLane, kills, deaths, assists, lastHits, denies,
+                goldPerMin, xpPerMin, heroDamage, towerDamage, heroHealing, netWorth, level, lastHitsByMinute,
+                deniesByMinute, goldByMinute, xpByMinute, purchases, deathLog, killLog, observersPlaced,
+                sentriesPlaced, laneEfficiencyPct, benchmarkPercentiles, lastHitsAt10Percentile,
+                damageDealtBySource, damageReceivedBySource, ReplayStats.EMPTY);
+    }
+
+    /**
+     * Números extras do replay analisado.
+     *
+     * @param damageTakenFromHeroes dano recebido por id do herói adversário que causou
+     * @param damageTakenFromOthers dano recebido de creeps, torres, Roshan e outros
+     * @param abilityUses usos de cada habilidade, pelo nome interno
+     * @param itemUses usos de cada item, pelo nome interno
+     * @param stunSeconds tempo total de stun causado em heróis
+     * @param goldByReason ouro por motivo, pelo código da Valve (12 heróis, 13 creeps, 14 neutros, 1 morte...)
+     * @param xpByReason XP por motivo, pelo código da Valve (1 heróis, 2 creeps, 3 Roshan...)
+     * @param runes runas pegas por tipo, pelo código da Valve (5 bounty, 0 dano dobrado...)
+     * @param campsStacked camps de neutros stackados
+     * @param observerKills observers adversárias destruídas
+     * @param sentryKills sentries adversárias destruídas
+     */
+    public record ReplayStats(
+            Map<Integer, Long> damageTakenFromHeroes,
+            long damageTakenFromOthers,
+            Map<String, Long> abilityUses,
+            Map<String, Long> itemUses,
+            double stunSeconds,
+            Map<Integer, Long> goldByReason,
+            Map<Integer, Long> xpByReason,
+            Map<Integer, Long> runes,
+            int campsStacked,
+            int observerKills,
+            int sentryKills) {
+
+        public static final ReplayStats EMPTY =
+                new ReplayStats(Map.of(), 0, Map.of(), Map.of(), 0, Map.of(), Map.of(), Map.of(), 0, 0, 0);
+
+        public ReplayStats {
+            damageTakenFromHeroes = Map.copyOf(damageTakenFromHeroes);
+            abilityUses = Map.copyOf(abilityUses);
+            itemUses = Map.copyOf(itemUses);
+            goldByReason = Map.copyOf(goldByReason);
+            xpByReason = Map.copyOf(xpByReason);
+            runes = Map.copyOf(runes);
+        }
     }
 
     /** Valor da série no minuto, ou nulo se a partida acabou antes ou a série não existe. */

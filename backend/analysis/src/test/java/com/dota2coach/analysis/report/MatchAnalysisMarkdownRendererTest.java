@@ -41,7 +41,7 @@ class MatchAnalysisMarkdownRendererTest {
                 "| 0 a 10 min | 1 | 1,0 |");
         assertThat(md).contains("## Itens principais", "| Power Treads | 12:00 | 10,0 min |", "| Maelstrom | 18:00 | – |");
         assertThat(md).doesNotContain("Tango");
-        assertThat(md).contains("Wards colocadas: 1 observer e 2 sentry.", "| 10 | +1000 |", "| 20 | 0 |");
+        assertThat(md).contains("- Wards colocadas: 1 observer e 2 sentry.", "| 10 | +1000 |", "| 20 | 0 |");
         assertThat(md).contains("## Contexto da partida", "### Draft", "| 1 | adversário | Axe | 2 (meio, maior patrimônio do time) |",
                 "| 2 | seu | Ogre Magi | 1 (rota segura, menor patrimônio do time), pick fora do comum |",
                 "Seu adversário direto pela posição: Axe.",
@@ -59,6 +59,19 @@ class MatchAnalysisMarkdownRendererTest {
         assertThat(md).contains("## Tempos de item contra o normal do herói",
                 "| **Sniper (você)** | Power Treads | 12:00 | 10 a 12 min | no normal | 55,0% |",
                 "| **Sniper (você)** | Maelstrom | 18:00 | 12 a 15 min | depois do normal | 50,0% |");
+        assertThat(md).contains("## De onde veio seu ouro e XP",
+                "- Ouro: Creeps de rota 60,0% (6000), Heróis 20,0% (2000), Neutros 20,0% (2000).",
+                "- XP: Creeps e neutros 80,0% (8000), Heróis 20,0% (2000).");
+        assertThat(md).contains("## De quem veio o dano que você recebeu", "| Axe | 3000 | 75,0% |",
+                "| Creeps, torres e Roshan | – | 25,0% |", "Ouro perdido ao morrer: 500. Ouro gasto em buyback: 300.");
+        assertThat(md).contains("## Uso de itens e habilidades", "- Habilidades: Shrapnel 10x, sniper\\_assassinate 4x.",
+                "- Itens ativados: tpscroll 3x, Black King Bar 2x.", "- Stun causado em heróis: 3,5 s.");
+        assertThat(md).contains("## Visão e mapa", "- Wards adversárias destruídas: 1 observer e 0 sentry.",
+                "- Runas pegas: Bounty 3, Dano dobrado 1.", "- Camps de neutros stackados: 2.");
+        assertThat(md).contains("## Momentos para rever no replay",
+                "- **4:30 a 5:05:** você morreu fora de luta para Axe.",
+                "- **31:20 a 32:10:** luta com -1500 de ouro para seu time; você morreu.");
+        assertThat(md.indexOf("## Momentos para rever no replay")).isGreaterThan(md.indexOf("## Lutas"));
         assertThat(md).contains("## Objetivos", "Torres derrubadas: seu time 1, adversário 1.",
                 "| 5:00 | Adversário | tirou o first blood |", "| 11:40 | Seu time | derrubou a torre T1 do meio |",
                 "| 38:20 | Adversário | derrubou o barracks à distância do meio |");

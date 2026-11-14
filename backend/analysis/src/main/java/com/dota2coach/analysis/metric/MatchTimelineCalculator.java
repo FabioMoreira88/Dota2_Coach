@@ -2,6 +2,7 @@ package com.dota2coach.analysis.metric;
 
 import com.dota2coach.analysis.metric.MatchAnalysis.FightLine;
 import com.dota2coach.analysis.metric.MatchAnalysis.ObjectiveLine;
+import com.dota2coach.analysis.metric.MatchAnalysis.ReplayMoment;
 import com.dota2coach.analysis.metric.MatchAnalysis.Timeline;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.MatchPlayer;
@@ -18,6 +19,12 @@ final class MatchTimelineCalculator {
 
     /** Quantas lutas aparecem no relatório, escolhidas pelo tamanho da virada de ouro. */
     static final int BIGGEST_FIGHTS = 5;
+    /** Trechos para rever no replay, no máximo. */
+    static final int MAX_MOMENTS = 5;
+    static final int MAX_FIGHT_MOMENTS = 3;
+    /** Uma morte fora de luta é revista desde esse tempo antes até esse tempo depois. */
+    static final int DEATH_BEFORE_SECONDS = 30;
+    static final int DEATH_AFTER_SECONDS = 5;
 
     private static final Pattern TOWER = Pattern.compile("_tower(\\d)(?:_(top|mid|bot))?");
     private static final Pattern BARRACKS = Pattern.compile("_(melee|range)_rax_(top|mid|bot)");
@@ -43,7 +50,35 @@ final class MatchTimelineCalculator {
         return new Timeline(objectives, fights.size(),
                 (int) fights.stream().filter(FightLine::youTookPart).count(),
                 (int) fights.stream().filter(f -> f.goldSwing() > 0).count(),
-                biggest);
+                biggest,
+                replayMoments(snapshot, me, fights));
+    }
+
+    /**
+     * Até {@link #MAX_MOMENTS} trechos para rever: as lutas que mais mexeram no ouro (as suas primeiro) e as suas
+     * mortes fora de luta que deixaram você mais tempo morto.
+     */
+    static List<ReplayMoment> replayMoments(MatchSnapshot snapshot, MatchPlayer me, List<FightLine> fights) {
+        List<ReplayMoment> moments = new ArrayList<>();
+        fights.stream()
+                .sorted(Comparator.comparing((FightLine f) -> !f.youTookPart())
+                        .thenComparing(f -> -Math.abs(f.goldSwing())))
+                .limit(MAX_FIGHT_MOMENTS)
+                .forEach(f -> moments.add(new ReplayMoment(f.startSeconds(), f.endSeconds(),
+                        "luta com " + (f.goldSwing() > 0 ? "+" : "") + f.goldSwing() + " de ouro para seu time"
+                                + (f.youDied() ? "; você morreu" : f.youTookPart() ? "; você participou"
+                                        : "; você não estava"))));
+        me.deathLog().stream()
+                .filter(d -> fights.stream().noneMatch(
+                        f -> d.timeSeconds() >= f.startSeconds() && d.timeSeconds() <= f.endSeconds()))
+                .sorted(Comparator.comparingInt(MatchPlayer.Death::secondsDead).reversed())
+                .limit(MAX_MOMENTS - moments.size())
+                .forEach(d -> moments.add(new ReplayMoment(Math.max(0, d.timeSeconds() - DEATH_BEFORE_SECONDS),
+                        d.timeSeconds() + DEATH_AFTER_SECONDS,
+                        "você morreu fora de luta" + (d.killerHeroId() == null ? ""
+                                : " para " + snapshot.heroName(d.killerHeroId())))));
+        moments.sort(Comparator.comparingInt(ReplayMoment::fromSeconds));
+        return moments;
     }
 
     private static FightLine fight(MatchSnapshot snapshot, AnalyzedMatch.Teamfight tf, MatchPlayer me) {

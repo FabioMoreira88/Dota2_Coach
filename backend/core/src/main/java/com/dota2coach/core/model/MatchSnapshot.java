@@ -15,6 +15,7 @@ import java.util.Map;
  *     analisado)
  * @param itemTimings quando o herói costuma terminar cada item, para o herói do jogador e os adversários (vazio
  *     sem replay analisado)
+ * @param abilityNames nome de exibição das habilidades pelo nome interno
  */
 public record MatchSnapshot(
         AnalyzedMatch match,
@@ -24,7 +25,8 @@ public record MatchSnapshot(
         Map<Integer, HeroDurations> heroDurations,
         HeroMatchups playerMatchups,
         Map<Integer, HeroItemPopularity> itemPopularity,
-        Map<Integer, HeroItemTimings> itemTimings) {
+        Map<Integer, HeroItemTimings> itemTimings,
+        Map<String, String> abilityNames) {
 
     public MatchSnapshot {
         heroes = Map.copyOf(heroes);
@@ -33,6 +35,7 @@ public record MatchSnapshot(
         heroDurations = Map.copyOf(heroDurations);
         itemPopularity = Map.copyOf(itemPopularity);
         itemTimings = Map.copyOf(itemTimings);
+        abilityNames = Map.copyOf(abilityNames);
     }
 
     public String heroName(Integer heroId) {

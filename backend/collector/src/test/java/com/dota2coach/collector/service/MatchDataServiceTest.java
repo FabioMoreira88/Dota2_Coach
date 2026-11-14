@@ -84,6 +84,7 @@ class MatchDataServiceTest {
         assertThat(snapshot.match().picks()).extracting(AnalyzedMatch.DraftPick::heroId)
                 .as("só picks, na ordem do draft").containsExactly(14, 2, 74, 1);
         assertThat(me.damageDealtBySource()).containsEntry(MatchPlayer.BASIC_ATTACK, 12000L);
+        assertThat(snapshot.abilityNames()).containsEntry("pudge_meat_hook", "Meat Hook").hasSize(5);
         assertThat(snapshot.itemPopularity()).as("herói 74 falhou e ficou de fora").containsOnlyKeys(14, 2, 1);
         assertThat(snapshot.itemTimings()).as("só o seu herói e os adversários; o 74 falhou").containsOnlyKeys(14, 1);
         assertThat(snapshot.itemTimings().get(14).byItem())

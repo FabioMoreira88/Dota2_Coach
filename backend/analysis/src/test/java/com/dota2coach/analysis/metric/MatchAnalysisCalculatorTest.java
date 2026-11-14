@@ -136,7 +136,7 @@ class MatchAnalysisCalculatorTest {
                 match.radiantGoldAdvantage(), match.picks(), match.players(), match.objectives(), fights);
         var snapshot = new com.dota2coach.core.model.MatchSnapshot(withFights, base.heroes(), base.items(),
                 base.damageTypes(), base.heroDurations(), base.playerMatchups(), base.itemPopularity(),
-                base.itemTimings());
+                base.itemTimings(), base.abilityNames());
 
         MatchAnalysis.Timeline t = calculator.analyze(snapshot, ACCOUNT, null, null).timeline();
 
@@ -214,6 +214,44 @@ class MatchAnalysisCalculatorTest {
     }
 
     @Test
+    void detalhesDoJogoDoJogador() {
+        MatchAnalysis.PlayDetails p = calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).play();
+
+        assertThat(p.damageFromHeroes()).containsExactly(new MatchAnalysis.DamageFrom("Axe", 3000, 0.75));
+        assertThat(p.damageFromOthersShare()).isEqualTo(0.25);
+        assertThat(p.goldLostOnDeaths()).isEqualTo(500);
+        assertThat(p.goldOnBuybacks()).isEqualTo(300);
+        assertThat(p.goldSources()).as("morte, buyback e venda de item não são fonte de ouro").containsExactly(
+                new MatchAnalysis.Share("Creeps de rota", 6000, 0.6), new MatchAnalysis.Share("Heróis", 2000, 0.2),
+                new MatchAnalysis.Share("Neutros", 2000, 0.2));
+        assertThat(p.xpSources()).containsExactly(new MatchAnalysis.Share("Creeps e neutros", 8000, 0.8),
+                new MatchAnalysis.Share("Heróis", 2000, 0.2));
+        assertThat(p.itemUses()).as("pelo nome do item quando ele é conhecido; sem os que não foram usados")
+                .containsExactly(new MatchAnalysis.Use("tpscroll", 3), new MatchAnalysis.Use("Black King Bar", 2));
+        assertThat(p.abilityUses()).containsExactly(new MatchAnalysis.Use("Shrapnel", 10),
+                new MatchAnalysis.Use("sniper_assassinate", 4));
+        assertThat(p.stunSeconds()).isEqualTo(3.5);
+        assertThat(p.runes()).containsExactly(new MatchAnalysis.Use("Bounty", 3),
+                new MatchAnalysis.Use("Dano dobrado", 1));
+        assertThat(p.campsStacked()).isEqualTo(2);
+        assertThat(p.observerKills()).isEqualTo(1);
+    }
+
+    @Test
+    void momentosParaReverNoReplay() {
+        List<MatchAnalysis.ReplayMoment> moments =
+                calculator.analyze(sniperMid(true), ACCOUNT, Position.MID, null).timeline().replayMoments();
+
+        assertThat(moments).as("lutas, as suas primeiro, e a morte fora de luta; a morte das 31:40 foi em luta")
+                .containsExactly(
+                        new MatchAnalysis.ReplayMoment(270, 305, "você morreu fora de luta para Axe"),
+                        new MatchAnalysis.ReplayMoment(600, 640, "luta com +300 de ouro para seu time; você participou"),
+                        new MatchAnalysis.ReplayMoment(1880, 1930, "luta com -1500 de ouro para seu time; você morreu"),
+                        new MatchAnalysis.ReplayMoment(2100, 2130,
+                                "luta com -200 de ouro para seu time; você não estava"));
+    }
+
+    @Test
     void semRaioXSalvoNaoComparaComOPadrao() {
         MatchAnalysis a = calculator.analyze(sniperMid(true), ACCOUNT, null, null);
 
@@ -237,6 +275,7 @@ class MatchAnalysisCalculatorTest {
         assertThat(a.timeline()).isEqualTo(MatchAnalysis.Timeline.EMPTY);
         assertThat(a.playersItems()).isEmpty();
         assertThat(a.itemTimings()).isEmpty();
+        assertThat(a.play()).isEqualTo(MatchAnalysis.PlayDetails.EMPTY);
         assertThat(a.context().directOpponent()).isNull();
     }
 

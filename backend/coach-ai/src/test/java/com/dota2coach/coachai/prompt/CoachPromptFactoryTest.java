@@ -29,7 +29,8 @@ class CoachPromptFactoryTest {
         assertThat(prompt.user()).contains("<partida>\n# Análise da partida 1\n</partida>",
                 "<focos_atuais>\n## Foco 1: last hits\n</focos_atuais>");
         assertThat(prompt.system()).contains("você não viu o replay", "no máximo 3 lições", "Não sugira picks",
-                "no máximo 950 palavras", "Matchup: <seu herói> contra <adversário>", "força dos times por duração",
+                "no máximo 1100 palavras", "Resumo", "Momentos para rever no replay",
+                "Checklist para a próxima partida", "Notas por área", "De quem veio o dano", "Matchup: <seu herói> contra <adversário>", "força dos times por duração",
                 "Lutas que mais mexeram no ouro", "Itens dos dois times",
                 "O que eu faria diferente nos itens", "Picos de força dele", "estimada pela rota");
     }
