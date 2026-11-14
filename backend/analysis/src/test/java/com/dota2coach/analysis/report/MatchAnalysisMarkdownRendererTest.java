@@ -64,7 +64,7 @@ class MatchAnalysisMarkdownRendererTest {
                 "- XP: Creeps e neutros 80,0% (8000), Heróis 20,0% (2000).");
         assertThat(md).contains("## De quem veio o dano que você recebeu", "| Axe | 3000 | 75,0% |",
                 "| Creeps, torres e Roshan | – | 25,0% |", "Ouro perdido ao morrer: 500. Ouro gasto em buyback: 300.");
-        assertThat(md).contains("## Uso de itens e habilidades", "- Habilidades: Shrapnel 10x, sniper\\_assassinate 4x.",
+        assertThat(md).contains("## Uso de itens e habilidades", "- Habilidades: Shrapnel 10x, sniper assassinate 4x.",
                 "- Itens ativados: tpscroll 3x, Black King Bar 2x.", "- Stun causado em heróis: 3,5 s.");
         assertThat(md).contains("## Visão e mapa", "- Wards adversárias destruídas: 1 observer e 0 sentry.",
                 "- Runas pegas: Bounty 3, Dano dobrado 1.", "- Camps de neutros stackados: 2.");

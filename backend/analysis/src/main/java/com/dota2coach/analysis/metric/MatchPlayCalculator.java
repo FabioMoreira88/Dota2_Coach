@@ -58,7 +58,7 @@ final class MatchPlayCalculator {
                 shares(s.xpByReason(), XP_SOURCES, code -> true),
                 uses(s.itemUses(), key -> itemsByKey.containsKey(key) ? itemsByKey.get(key).name() : key,
                         MAX_ITEM_USES),
-                uses(s.abilityUses(), key -> snapshot.abilityNames().getOrDefault(key, key), MAX_ABILITY_USES),
+                uses(s.abilityUses(), key -> abilityName(snapshot, key), MAX_ABILITY_USES),
                 s.stunSeconds(),
                 s.observerKills(),
                 s.sentryKills(),
@@ -84,6 +84,23 @@ final class MatchPlayCalculator {
                 .map(e -> new Share(e.getKey(), e.getValue(), total == 0 ? 0 : e.getValue() / (double) total))
                 .sorted(Comparator.comparingLong(Share::value).reversed().thenComparing(Share::label))
                 .toList();
+    }
+
+    /** Ações do mapa que o replay registra como habilidade, sem nome de exibição nas constantes do OpenDota. */
+    static final Map<String, String> MAP_ACTIONS = Map.of(
+            "ability_capture", "Captura de outpost",
+            "abyssal_underlord_portal_warp", "Portal do Underlord",
+            "twin_gate_portal_warp", "Twin Gate",
+            "ability_lamp_use", "Lotus Pool",
+            "ability_pluck_famango", "Famango");
+
+    /** Nome legível: o das constantes, o de uma ação do mapa ou, sem nenhum dos dois, a chave sem os sublinhados. */
+    static String abilityName(MatchSnapshot snapshot, String key) {
+        String name = snapshot.abilityNames().get(key);
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+        return MAP_ACTIONS.getOrDefault(key, key.replace('_', ' '));
     }
 
     private static List<Use> uses(Map<String, Long> byKey, UnaryOperator<String> name,
