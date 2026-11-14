@@ -38,6 +38,7 @@ public final class Snapshots {
     public static final int TANGO = 44;
     public static final int DESOLATOR = 168;
     public static final int HYPERSTONE = 64;
+    public static final int HURRICANE_PIKE = 263;
 
     private Snapshots() {}
 
@@ -57,7 +58,9 @@ public final class Snapshots {
                 BLINK, new Item(BLINK, "blink", "Blink Dagger", 2250, false),
                 TANGO, new Item(TANGO, "tango", "Tango", 90, false),
                 DESOLATOR, new Item(DESOLATOR, "desolator", "Desolator", 3500, true),
-                HYPERSTONE, new Item(HYPERSTONE, "hyperstone", "Hyperstone", 2000, false));
+                HYPERSTONE, new Item(HYPERSTONE, "hyperstone", "Hyperstone", 2000, false),
+                HURRICANE_PIKE, new Item(HURRICANE_PIKE, "hurricane_pike", "Hurricane Pike", 4450, true,
+                        List.of("dragon_lance", "force_staff")));
     }
 
     public static Map<Integer, HeroMeta> meta() {

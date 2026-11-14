@@ -40,13 +40,35 @@ final class MatchItemsCalculator {
                 .toList();
     }
 
+    /**
+     * Primeira compra de cada item principal, por nome interno, em ordem de compra. Um componente que aparece no
+     * mesmo segundo do item que ele forma (Force Staff junto da Hurricane Pike) fica de fora: a OpenDota registra
+     * os dois quando o item final é montado na hora.
+     */
+    static Map<String, Integer> firstCoreItems(MatchPlayer p, Map<String, Item> itemsByKey) {
+        Map<String, Integer> first = new LinkedHashMap<>();
+        p.purchases().forEach(b -> first.putIfAbsent(b.itemKey(), b.timeSeconds()));
+        Map<String, Integer> core = new LinkedHashMap<>();
+        first.forEach((key, time) -> {
+            Item item = itemsByKey.get(key);
+            if (item == null || !XRayCalculator.isCoreItem(item)) {
+                return;
+            }
+            boolean builtInto = first.entrySet().stream().anyMatch(other -> other.getValue().equals(time)
+                    && itemsByKey.containsKey(other.getKey())
+                    && itemsByKey.get(other.getKey()).components().contains(key));
+            if (!builtInto) {
+                core.put(key, time);
+            }
+        });
+        return core;
+    }
+
     private static PlayerItems playerItems(MatchSnapshot snapshot, MatchPlayer p, MatchPlayer me,
             Map<String, Item> itemsByKey, boolean late) {
         Map<String, Integer> first = new LinkedHashMap<>();
         p.purchases().forEach(b -> first.putIfAbsent(b.itemKey(), b.timeSeconds()));
-        List<ItemTime> items = first.entrySet().stream()
-                .filter(e -> itemsByKey.containsKey(e.getKey()))
-                .filter(e -> XRayCalculator.isCoreItem(itemsByKey.get(e.getKey())))
+        List<ItemTime> items = firstCoreItems(p, itemsByKey).entrySet().stream()
                 .map(e -> new ItemTime(itemsByKey.get(e.getKey()).name(), e.getValue()))
                 .sorted(Comparator.comparingInt(ItemTime::timeSeconds))
                 .toList();

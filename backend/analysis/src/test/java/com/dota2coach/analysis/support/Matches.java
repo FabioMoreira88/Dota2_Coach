@@ -35,7 +35,8 @@ public final class Matches {
                 parsed ? series(4) : List.of(), parsed ? series(1) : List.of(),
                 parsed ? series(300) : List.of(), parsed ? series(320) : List.of(),
                 parsed ? List.of(new MatchDetail.Purchase("tango", -80), new MatchDetail.Purchase("power_treads", 720),
-                        new MatchDetail.Purchase("maelstrom", 1080), new MatchDetail.Purchase("power_treads", 1500))
+                        new MatchDetail.Purchase("maelstrom", 1080), new MatchDetail.Purchase("power_treads", 1500),
+                        new MatchDetail.Purchase("dragon_lance", 1700), new MatchDetail.Purchase("hurricane_pike", 1700))
                         : List.of(),
                 parsed ? List.of(new MatchPlayer.Death(300, 15, Snapshots.AXE), new MatchPlayer.Death(1900, 45, null))
                         : List.of(),
