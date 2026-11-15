@@ -70,6 +70,11 @@ valor de partida calculado no próprio Raio-X, e confere sozinho: o próximo Rai
 diagnóstico** (atingiu, avançou, igual ou piorou) e cada análise de partida traz **Seus focos nesta partida**
 (atingiu ou não; meta de outro herói não se aplica).
 
+As **notas por área** (Rota, Lutas, Itens, Visão, Sobrevivência) de cada comentário de partida também ficam
+guardadas (tabela `match_area_score`, migração V4). O Raio-X mostra **Notas por área das partidas revisadas** e a
+análise de partida mostra **Suas notas por área nas partidas anteriores**: média das últimas 10 partidas, das 10
+anteriores e as últimas notas. Rodar a mesma partida de novo não conta duas vezes: vale a nota mais recente.
+
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
 uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
 

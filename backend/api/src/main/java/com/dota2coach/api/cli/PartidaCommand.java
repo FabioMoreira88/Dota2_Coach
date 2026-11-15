@@ -1,5 +1,7 @@
 package com.dota2coach.api.cli;
 
+import com.dota2coach.analysis.evolution.AreaTrend;
+import com.dota2coach.analysis.evolution.AreaTrendCalculator;
 import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.evolution.FocusGoalChecker;
 import com.dota2coach.analysis.metric.MatchAnalysis;
@@ -10,10 +12,12 @@ import com.dota2coach.api.config.CoachConfig.CoachClientFactory;
 import com.dota2coach.api.config.CoachProperties;
 import com.dota2coach.api.config.PartidaProperties;
 import com.dota2coach.coachai.client.CoachReply;
+import com.dota2coach.coachai.prompt.AreaScoreTable;
 import com.dota2coach.coachai.prompt.CoachPromptFactory;
 import com.dota2coach.collector.service.MatchDataService;
 import com.dota2coach.core.exception.ExternalServiceUnavailableException;
 import com.dota2coach.core.model.CoachDiagnosis;
+import com.dota2coach.core.model.MatchAreaScore;
 import com.dota2coach.core.model.MatchReview;
 import com.dota2coach.core.model.MatchReviewComment;
 import com.dota2coach.core.model.MatchSnapshot;
@@ -109,7 +113,8 @@ public class PartidaCommand implements ApplicationRunner {
                 : history.diagnoses(latestReport.getId()).stream().findFirst().orElse(null);
         List<FocusGoalCheck> goals = currentDiagnosis == null || currentDiagnosis.getId() == null ? List.of()
                 : FocusGoalChecker.checkMatch(analysis, history.goals(currentDiagnosis.getId()));
-        String markdown = renderer.render(analysis, goals);
+        List<AreaTrend> areaTrends = AreaTrendCalculator.trends(reviews.scores(properties.accountId()), matchId);
+        String markdown = renderer.render(analysis, goals, areaTrends);
         Path output = write(Path.of(properties.resolvedOutput()), markdown);
         log.info("Partida: relatório salvo em {}", output);
 
@@ -142,12 +147,25 @@ public class PartidaCommand implements ApplicationRunner {
                 .generate(CoachPromptFactory.fromMatchAnalysis(review.getMarkdown(), currentFocus));
         BigDecimal cost = BigDecimal.valueOf(provider.pricing().cost(reply.inputTokens(), reply.outputTokens()))
                 .setScale(4, RoundingMode.HALF_UP);
-        reviews.saveComment(new MatchReviewComment(review, name, reply.model(), clock.instant(),
-                reply.inputTokens(), reply.outputTokens(), cost, reply.text()));
+        MatchReviewComment comment = reviews.saveComment(new MatchReviewComment(review, name, reply.model(),
+                clock.instant(), reply.inputTokens(), reply.outputTokens(), cost, reply.text()));
+        saveScores(review, comment);
         Path file = reportFile.resolveSibling("comentario-" + reportFile.getFileName());
         Path written = write(file, reply.text() + "\n");
         log.info("Partida: comentário do coach salvo em {} e no histórico (custo estimado US$ {}).", written,
                 cost.toPlainString());
+    }
+
+    /** Guarda as notas da tabela "Notas por área" para a tendência das próximas revisões e do Raio-X. */
+    private void saveScores(MatchReview review, MatchReviewComment comment) {
+        List<AreaScoreTable.Row> rows = AreaScoreTable.parse(comment.getText());
+        if (rows.isEmpty()) {
+            log.warn("Partida: o comentário veio sem a tabela de notas por área; esta partida fica fora da tendência.");
+            return;
+        }
+        reviews.saveScores(rows.stream().map(r -> new MatchAreaScore(comment, review.getAccountId(),
+                review.getMatchId(), comment.getGeneratedAt(), r.area(), r.score(), r.reason())).toList());
+        log.info("Partida: {} nota(s) por área guardada(s) para acompanhar sua evolução.", rows.size());
     }
 
     private String toJson(MatchAnalysis analysis) {

@@ -1,6 +1,7 @@
 package com.dota2coach.api.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -24,6 +25,7 @@ import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
 import com.dota2coach.core.enums.FocusMetric;
 import com.dota2coach.core.enums.Position;
+import com.dota2coach.core.enums.ScoreArea;
 import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.CoachDiagnosis;
@@ -32,6 +34,7 @@ import com.dota2coach.core.model.Hero;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchPlayer;
 import com.dota2coach.core.model.MatchRecord;
+import com.dota2coach.core.model.MatchAreaScore;
 import com.dota2coach.core.model.MatchReview;
 import com.dota2coach.core.model.MatchReviewComment;
 import com.dota2coach.core.model.MatchSnapshot;
@@ -76,6 +79,7 @@ class PartidaCommandTest {
     private final ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
 
     private final MatchReviewService reviews = mock(MatchReviewService.class);
+    private String replyText = "## Lição 1";
     private final List<CoachPrompt> prompts = new ArrayList<>();
 
     @BeforeEach
@@ -103,7 +107,7 @@ class PartidaCommandTest {
             @Override
             public CoachReply generate(CoachPrompt prompt) {
                 prompts.add(prompt);
-                return new CoachReply("## Lição 1", "claude-opus-5-5", 4000, 2000, Duration.ofSeconds(30));
+                return new CoachReply(replyText, "claude-opus-5-5", 4000, 2000, Duration.ofSeconds(30));
             }
         };
         return new PartidaCommand(matchDataService, new MatchAnalysisCalculator(),
@@ -184,6 +188,29 @@ class PartidaCommandTest {
         verify(reviews).saveComment(saved.capture());
         assertThat(saved.getValue().getCostUsd()).isEqualByComparingTo("0.0560");
         assertThat(Files.readString(dir.resolve("fase0/comentario-partida-9083198111.md"))).isEqualTo("## Lição 1\n");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void notasPorAreaSaoGuardadasEATendenciaVaiParaOCoach() throws Exception {
+        when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(true)));
+        when(history.latest(ACCOUNT)).thenReturn(Optional.empty());
+        MatchReviewComment old = mock(MatchReviewComment.class);
+        when(reviews.scores(ACCOUNT)).thenReturn(List.of(
+                new MatchAreaScore(old, ACCOUNT, 1L, NOW.minusSeconds(3600), ScoreArea.VISION, 4, null),
+                new MatchAreaScore(old, ACCOUNT, MATCH, NOW.minusSeconds(60), ScoreArea.VISION, 9, "mesma partida")));
+        replyText = "## Notas por área\n\n| Área | Nota | Justificativa |\n|---|---:|---|\n"
+                + "| Rota | 7 | +319 de ouro |\n| Visão | 6 | 15 runas |\n";
+
+        command(ACCOUNT, true, "chave").run(new DefaultApplicationArguments());
+
+        assertThat(prompts).singleElement().satisfies(p -> assertThat(p.user())
+                .contains("## Suas notas por área nas partidas anteriores", "| Visão | 1 | 4,0 | — | 4 |"));
+        ArgumentCaptor<List<MatchAreaScore>> saved = ArgumentCaptor.forClass(List.class);
+        verify(reviews).saveScores(saved.capture());
+        assertThat(saved.getValue()).extracting(MatchAreaScore::getArea, MatchAreaScore::getScore,
+                MatchAreaScore::getMatchId).containsExactly(tuple(ScoreArea.LANE, 7, MATCH),
+                tuple(ScoreArea.VISION, 6, MATCH));
     }
 
     @Test

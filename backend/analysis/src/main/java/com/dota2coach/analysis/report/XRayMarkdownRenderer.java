@@ -1,5 +1,6 @@
 package com.dota2coach.analysis.report;
 
+import com.dota2coach.analysis.evolution.AreaTrend;
 import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.evolution.XRayEvolution;
 import com.dota2coach.analysis.metric.ProfileXRay;
@@ -55,10 +56,21 @@ public class XRayMarkdownRenderer {
      * @param goals metas do diagnóstico anterior conferidas com este Raio-X; vazio quando não há
      */
     public String render(ProfileXRay x, XRayEvolution evolution, List<FocusGoalCheck> goals) {
+        return render(x, evolution, goals, List.of());
+    }
+
+    /**
+     * @param areaTrends notas por área das partidas comentadas; vazio quando não há
+     */
+    public String render(ProfileXRay x, XRayEvolution evolution, List<FocusGoalCheck> goals,
+            List<AreaTrend> areaTrends) {
         StringBuilder md = new StringBuilder();
         header(md, x);
         evolution(md, x, evolution);
         FocusGoalMarkdown.xRay(md, goals);
+        AreaTrendMarkdown.render(md, "Notas por área das partidas revisadas",
+                "Notas de 0 a 10 que o coach deu nas partidas que você revisou (5 é uma partida comum para você).",
+                areaTrends);
         overview(md, x);
         heroes(md, x);
         lanes(md, x);

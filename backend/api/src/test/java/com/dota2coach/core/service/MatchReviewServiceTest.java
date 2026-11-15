@@ -1,12 +1,16 @@
 package com.dota2coach.core.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.dota2coach.core.enums.Position;
+import com.dota2coach.core.enums.ScoreArea;
+import com.dota2coach.core.model.MatchAreaScore;
 import com.dota2coach.core.model.MatchReview;
 import com.dota2coach.core.model.MatchReviewComment;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -46,5 +50,21 @@ class MatchReviewServiceTest {
             assertThat(c.getText()).isEqualTo("## Rotas");
             assertThat(c.getCostUsd()).isEqualByComparingTo("0.0560");
         });
+    }
+
+    @Test
+    void notasPorAreaFicamLigadasAoComentarioEOrdenadasPorData() {
+        MatchReview review = review(1L, "2026-11-14T12:00:00Z");
+        MatchReviewComment comment = reviews.saveComment(new MatchReviewComment(review, "claude", "claude-opus-5-5",
+                Instant.parse("2026-11-14T12:01:00Z"), 1, 1, BigDecimal.ONE, "## Notas"));
+        reviews.saveScores(List.of(
+                new MatchAreaScore(comment, ACCOUNT, 1L, Instant.parse("2026-11-14T12:01:00Z"), ScoreArea.LANE, 7,
+                        "+319 de ouro"),
+                new MatchAreaScore(comment, ACCOUNT, 1L, Instant.parse("2026-11-15T12:01:00Z"), ScoreArea.VISION, 6,
+                        null)));
+
+        assertThat(reviews.scores(ACCOUNT)).extracting(MatchAreaScore::getArea, MatchAreaScore::getScore)
+                .containsExactly(tuple(ScoreArea.VISION, 6), tuple(ScoreArea.LANE, 7));
+        assertThat(reviews.scores(999L)).isEmpty();
     }
 }

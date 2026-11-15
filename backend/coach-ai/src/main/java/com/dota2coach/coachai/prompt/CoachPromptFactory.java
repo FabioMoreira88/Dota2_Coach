@@ -43,6 +43,8 @@ public final class CoachPromptFactory {
             xp_por_min, last_hits_por_min, dano_em_herois_por_min e last_hits_aos_10; nos outros casos, null. Um \
             foco que não cabe em nenhuma chave fica fora do bloco. O jogador não vê esse bloco: o app usa para \
             conferir as metas com os números.
+            - Se vier a seção "Notas por área das partidas revisadas", use-a como apoio: uma área com nota baixa \
+            em várias partidas é candidata a foco, desde que os números do Raio-X confirmem.
             - Se vier a seção "Metas do último diagnóstico" no Raio-X, use os números dela em "Como foram seus \
             focos": eles foram calculados pelo app.
             - Escreva em português do Brasil, em Markdown, com no máximo 750 palavras. Use um tom direto e \
@@ -111,7 +113,12 @@ public final class CoachPromptFactory {
             começando por um verbo, tiradas das lições.
             - Depois, uma seção chamada "Notas por área" com uma tabela de notas de 0 a 10 para Rota, Lutas, \
             Itens, Visão e Sobrevivência, cada nota com uma justificativa de uma linha apoiada num número da \
-            análise. Dê nota pelo que se espera da posição dele, e use 5 como uma partida comum para ele.
+            análise. Dê nota pelo que se espera da posição dele, e use 5 como uma partida comum para ele. Use \
+            exatamente esses cinco nomes de área na primeira coluna e só o número inteiro na coluna da nota: o app \
+            guarda as notas para mostrar a evolução.
+            - Se vier a seção "Suas notas por área nas partidas anteriores", mantenha a mesma régua e diga em uma \
+            frase onde esta partida ficou acima ou abaixo da média dele, e se alguma área segue baixa há várias \
+            partidas.
             - Se os focos atuais do jogador vierem junto, diga em uma frase por foco se esta partida avançou, \
             ficou igual ou recuou nele, citando o número. Quando a análise tiver a seção "Seus focos nesta \
             partida", use os números e o resultado dela, que foram calculados pelo app; um foco marcado como "não \
