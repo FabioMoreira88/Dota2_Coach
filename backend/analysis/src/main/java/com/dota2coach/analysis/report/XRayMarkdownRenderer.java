@@ -1,5 +1,6 @@
 package com.dota2coach.analysis.report;
 
+import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.evolution.XRayEvolution;
 import com.dota2coach.analysis.metric.ProfileXRay;
 import com.dota2coach.analysis.metric.ProfileXRay.DeathPhase;
@@ -21,6 +22,7 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
@@ -46,9 +48,17 @@ public class XRayMarkdownRenderer {
      * @param evolution comparação com o Raio-X anterior da conta, ou nulo no primeiro Raio-X
      */
     public String render(ProfileXRay x, XRayEvolution evolution) {
+        return render(x, evolution, List.of());
+    }
+
+    /**
+     * @param goals metas do diagnóstico anterior conferidas com este Raio-X; vazio quando não há
+     */
+    public String render(ProfileXRay x, XRayEvolution evolution, List<FocusGoalCheck> goals) {
         StringBuilder md = new StringBuilder();
         header(md, x);
         evolution(md, x, evolution);
+        FocusGoalMarkdown.xRay(md, goals);
         overview(md, x);
         heroes(md, x);
         lanes(md, x);

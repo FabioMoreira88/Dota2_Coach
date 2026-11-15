@@ -64,6 +64,12 @@ aos 10 min, mortes por fase, tempo morto e as médias dos heróis mais jogados, 
 igual (diferença dentro de 5%) ou piorou. Com `diagnose=true`, o diagnóstico anterior vai junto para o coach, que
 abre com "Como foram seus focos", meta por meta, e diz quais focos manteve e quais trocou.
 
+O diagnóstico também devolve cada foco com uma **meta numérica** (por exemplo, last hits aos 10 min com o
+Sniper ≥ 45, ou mortes de 10 a 20 min ≤ 1,8). O app guarda essas metas (tabela `focus_goal`, migração V3) com o
+valor de partida calculado no próprio Raio-X, e confere sozinho: o próximo Raio-X traz **Metas do último
+diagnóstico** (atingiu, avançou, igual ou piorou) e cada análise de partida traz **Seus focos nesta partida**
+(atingiu ou não; meta de outro herói não se aplica).
+
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
 uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
 

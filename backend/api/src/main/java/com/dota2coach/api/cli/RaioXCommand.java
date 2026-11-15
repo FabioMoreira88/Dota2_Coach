@@ -1,5 +1,7 @@
 package com.dota2coach.api.cli;
 
+import com.dota2coach.analysis.evolution.FocusGoalCheck;
+import com.dota2coach.analysis.evolution.FocusGoalChecker;
 import com.dota2coach.analysis.evolution.XRayEvolution;
 import com.dota2coach.analysis.evolution.XRayEvolutionCalculator;
 import com.dota2coach.analysis.metric.ProfileXRay;
@@ -10,8 +12,10 @@ import com.dota2coach.api.config.CoachProperties;
 import com.dota2coach.api.config.RaioXProperties;
 import com.dota2coach.coachai.client.CoachReply;
 import com.dota2coach.coachai.prompt.CoachPromptFactory;
+import com.dota2coach.coachai.prompt.FocusGoalBlock;
 import com.dota2coach.collector.service.ProfileSnapshotService;
 import com.dota2coach.core.model.CoachDiagnosis;
+import com.dota2coach.core.model.FocusGoal;
 import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.XRayReport;
 import com.dota2coach.core.service.XRayHistoryService;
@@ -26,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +105,10 @@ public class RaioXCommand implements ApplicationRunner {
         ProfileXRay xRay = calculator.calculate(snapshot, properties.position());
         XRayReport previous = history.latest(accountId).orElse(null);
         XRayEvolution evolution = evolution(previous, xRay);
-        String markdown = renderer.render(xRay, evolution);
+        CoachDiagnosis previousDiagnosis = previous == null ? null : previousDiagnosis(previous);
+        List<FocusGoalCheck> goals = previousDiagnosis == null || previousDiagnosis.getId() == null ? List.of()
+                : FocusGoalChecker.checkXRay(xRay, history.goals(previousDiagnosis.getId()));
+        String markdown = renderer.render(xRay, evolution, goals);
         Path output = write(Path.of(properties.resolvedOutput()), markdown);
         log.info("Raio-X: relatório salvo em {}", output);
 
@@ -109,7 +117,7 @@ public class RaioXCommand implements ApplicationRunner {
         log.info("Raio-X: guardado no histórico (Raio-X nº {} desta conta).", history.count(accountId));
 
         if (properties.diagnose()) {
-            diagnose(report, output, previous == null ? null : previousDiagnosis(previous));
+            diagnose(report, xRay, output, previousDiagnosis == null ? null : previousDiagnosis.getText());
         }
     }
 
@@ -131,14 +139,14 @@ public class RaioXCommand implements ApplicationRunner {
         }
     }
 
-    private String previousDiagnosis(XRayReport previous) {
+    private CoachDiagnosis previousDiagnosis(XRayReport previous) {
         if (previous.getId() == null) {
             return null;
         }
-        return history.diagnoses(previous.getId()).stream().findFirst().map(CoachDiagnosis::getText).orElse(null);
+        return history.diagnoses(previous.getId()).stream().findFirst().orElse(null);
     }
 
-    private void diagnose(XRayReport report, Path reportFile, String previousDiagnosis) {
+    private void diagnose(XRayReport report, ProfileXRay xRay, Path reportFile, String previousDiagnosis) {
         String name = properties.coachProvider();
         CoachProperties.Provider provider = coachProperties.providers().get(name);
         if (provider == null) {
@@ -155,15 +163,35 @@ public class RaioXCommand implements ApplicationRunner {
                 .generate(CoachPromptFactory.fromXRayReport(report.getMarkdown(), previousDiagnosis));
         BigDecimal cost = BigDecimal.valueOf(provider.pricing().cost(reply.inputTokens(), reply.outputTokens()))
                 .setScale(4, RoundingMode.HALF_UP);
-        history.saveDiagnosis(new CoachDiagnosis(report, name, reply.model(), clock.instant(),
-                reply.inputTokens(), reply.outputTokens(), cost, reply.text()));
+        FocusGoalBlock.Parsed parsed = FocusGoalBlock.parse(reply.text());
+        CoachDiagnosis diagnosis = history.saveDiagnosis(new CoachDiagnosis(report, name, reply.model(),
+                clock.instant(), reply.inputTokens(), reply.outputTokens(), cost, parsed.text()));
+        saveGoals(diagnosis, xRay, parsed);
         Path file = reportFile.resolveSibling(reportFile.getFileName().toString().replace("raio-x-", "diagnostico-"));
         if (file.equals(reportFile)) {
             file = reportFile.resolveSibling("diagnostico-" + reportFile.getFileName());
         }
-        write(file, reply.text() + "\n");
+        write(file, parsed.text() + "\n");
         log.info("Diagnóstico: salvo em {} e no histórico (custo estimado US$ {}).", file.toAbsolutePath().normalize(),
                 cost.toPlainString());
+    }
+
+    /** Guarda as metas do bloco da IA, com o valor de partida calculado neste Raio-X. */
+    private void saveGoals(CoachDiagnosis diagnosis, ProfileXRay xRay, FocusGoalBlock.Parsed parsed) {
+        parsed.ignored().forEach(reason -> log.warn("Diagnóstico: meta ignorada: {}.", reason));
+        if (parsed.goals().isEmpty()) {
+            log.warn("Diagnóstico: o coach não mandou metas que o app consiga conferir; o próximo Raio-X compara"
+                    + " só pelo texto.");
+            return;
+        }
+        List<FocusGoal> goals = new ArrayList<>();
+        for (int i = 0; i < parsed.goals().size(); i++) {
+            FocusGoalBlock.Draft d = parsed.goals().get(i);
+            goals.add(new FocusGoal(diagnosis, i + 1, d.title(), d.metric(), d.heroName(),
+                    FocusGoalChecker.xRayValue(xRay, d.metric(), d.heroName()), d.target()));
+        }
+        history.saveGoals(goals);
+        log.info("Diagnóstico: {} meta(s) guardada(s) para conferir no próximo Raio-X e nas partidas.", goals.size());
     }
 
     private String toJson(ProfileXRay xRay) {

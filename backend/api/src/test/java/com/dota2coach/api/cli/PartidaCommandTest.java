@@ -22,10 +22,12 @@ import com.dota2coach.coachai.prompt.CoachPrompt;
 import com.dota2coach.collector.service.MatchDataService;
 import com.dota2coach.core.enums.GameMode;
 import com.dota2coach.core.enums.Lane;
+import com.dota2coach.core.enums.FocusMetric;
 import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.enums.Side;
 import com.dota2coach.core.model.AnalyzedMatch;
 import com.dota2coach.core.model.CoachDiagnosis;
+import com.dota2coach.core.model.FocusGoal;
 import com.dota2coach.core.model.Hero;
 import com.dota2coach.core.model.HeroMatchups;
 import com.dota2coach.core.model.MatchPlayer;
@@ -166,13 +168,18 @@ class PartidaCommandTest {
         org.springframework.test.util.ReflectionTestUtils.setField(report, "id", 7L);
         when(matchDataService.collect(MATCH, ACCOUNT)).thenReturn(Optional.of(snapshot(true)));
         when(history.latest(ACCOUNT)).thenReturn(Optional.of(report));
-        when(history.diagnoses(7L)).thenReturn(List.of(new CoachDiagnosis(report, "claude", "claude-opus-5-5", NOW,
-                1, 1, BigDecimal.ONE, "## Foco 1: last hits aos 10 min")));
+        CoachDiagnosis diagnosis = new CoachDiagnosis(report, "claude", "claude-opus-5-5", NOW,
+                1, 1, BigDecimal.ONE, "## Foco 1: last hits aos 10 min");
+        org.springframework.test.util.ReflectionTestUtils.setField(diagnosis, "id", 9L);
+        when(history.diagnoses(7L)).thenReturn(List.of(diagnosis));
+        when(history.goals(9L)).thenReturn(List.of(new FocusGoal(diagnosis, 1, "Morrer menos",
+                FocusMetric.DEATHS_PER_MATCH, null, 8.0, 5)));
 
         command(ACCOUNT, true, "chave").run(new DefaultApplicationArguments());
 
         assertThat(prompts).singleElement().satisfies(p -> assertThat(p.user())
-                .contains("<partida>\n# Análise da partida 9083198111", "## Foco 1: last hits aos 10 min"));
+                .contains("<partida>\n# Análise da partida 9083198111", "## Foco 1: last hits aos 10 min",
+                        "## Seus focos nesta partida", "| 1. Morrer menos | Mortes por partida | ≤ 5,0 |"));
         ArgumentCaptor<MatchReviewComment> saved = ArgumentCaptor.forClass(MatchReviewComment.class);
         verify(reviews).saveComment(saved.capture());
         assertThat(saved.getValue().getCostUsd()).isEqualByComparingTo("0.0560");

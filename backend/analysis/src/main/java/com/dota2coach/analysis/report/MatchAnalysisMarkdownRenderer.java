@@ -5,6 +5,7 @@ import static com.dota2coach.analysis.report.XRayMarkdownRenderer.escape;
 import static com.dota2coach.analysis.report.XRayMarkdownRenderer.pct;
 import static com.dota2coach.analysis.report.XRayMarkdownRenderer.percentile;
 
+import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.metric.MatchAnalysis;
 import com.dota2coach.analysis.metric.MatchAnalysis.Context;
 import com.dota2coach.analysis.metric.MatchAnalysis.DamageFrom;
@@ -52,9 +53,17 @@ public class MatchAnalysisMarkdownRenderer {
     }
 
     public String render(MatchAnalysis a) {
+        return render(a, List.of());
+    }
+
+    /**
+     * @param goals metas do último diagnóstico conferidas com esta partida; vazio quando não há
+     */
+    public String render(MatchAnalysis a, List<FocusGoalCheck> goals) {
         StringBuilder md = new StringBuilder();
         header(md, a);
         summary(md, a);
+        FocusGoalMarkdown.match(md, goals);
         context(md, a);
         if (!a.replayParsed()) {
             md.append("## Replay ainda não analisado\n\n")

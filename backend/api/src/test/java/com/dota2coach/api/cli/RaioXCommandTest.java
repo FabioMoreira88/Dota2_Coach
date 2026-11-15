@@ -20,8 +20,10 @@ import com.dota2coach.coachai.client.CoachReply;
 import com.dota2coach.coachai.enums.ProviderType;
 import com.dota2coach.coachai.prompt.CoachPrompt;
 import com.dota2coach.collector.service.ProfileSnapshotService;
+import com.dota2coach.core.enums.FocusMetric;
 import com.dota2coach.core.enums.Position;
 import com.dota2coach.core.model.CoachDiagnosis;
+import com.dota2coach.core.model.FocusGoal;
 import com.dota2coach.core.model.PlayerSummary;
 import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.SteamId;
@@ -55,6 +57,7 @@ class RaioXCommandTest {
     private final ProfileSnapshotService snapshotService = mock(ProfileSnapshotService.class);
     private final XRayHistoryService history = mock(XRayHistoryService.class);
     private final List<CoachPrompt> prompts = new ArrayList<>();
+    private String replyText = "## Foco 1";
 
     @BeforeEach
     void setUp() {
@@ -83,7 +86,7 @@ class RaioXCommandTest {
             @Override
             public CoachReply generate(CoachPrompt prompt) {
                 prompts.add(prompt);
-                return new CoachReply("## Foco 1", "claude-opus-5-5", 5000, 4000, Duration.ofSeconds(40));
+                return new CoachReply(replyText, "claude-opus-5-5", 5000, 4000, Duration.ofSeconds(40));
             }
         };
         return new RaioXCommand(snapshotService, new XRayCalculator(), new XRayMarkdownRenderer(props.zone()), props,
@@ -170,6 +173,52 @@ class RaioXCommandTest {
 
         assertThat(Files.readString(dir.resolve("fase0/raio-x-34839344.md"))).doesNotContain("## Evolução");
         verify(history).saveReport(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void metasDoDiagnosticoSaoGuardadasForaDoTexto() throws Exception {
+        when(snapshotService.collect(ACCOUNT)).thenReturn(emptySnapshot());
+        replyText = "## Foco 1\nMeta: 0,5 de vitória.\n\n```metas\n{\"focos\": [{\"titulo\": \"Vencer mais\","
+                + " \"metrica\": \"taxa_vitoria\", \"heroi\": null, \"meta\": 0.5}]}\n```\n";
+
+        command(0, true, "chave").run(new DefaultApplicationArguments());
+
+        ArgumentCaptor<CoachDiagnosis> diagnosis = ArgumentCaptor.forClass(CoachDiagnosis.class);
+        verify(history).saveDiagnosis(diagnosis.capture());
+        assertThat(diagnosis.getValue().getText()).isEqualTo("## Foco 1\nMeta: 0,5 de vitória.");
+        assertThat(Files.readString(dir.resolve("fase0/diagnostico-34839344.md")))
+                .isEqualTo("## Foco 1\nMeta: 0,5 de vitória.\n");
+        ArgumentCaptor<List<FocusGoal>> goals = ArgumentCaptor.forClass(List.class);
+        verify(history).saveGoals(goals.capture());
+        assertThat(goals.getValue()).singleElement().satisfies(g -> {
+            assertThat(g.getOrdinal()).isEqualTo(1);
+            assertThat(g.getMetric()).isEqualTo(FocusMetric.WIN_RATE);
+            assertThat(g.getTarget()).isEqualTo(0.5);
+            assertThat(g.getBaseline()).as("perfil sem partidas não tem valor de partida").isNull();
+        });
+    }
+
+    @Test
+    void metasDoDiagnosticoAnteriorSaoConferidasNoRaioX() throws Exception {
+        when(snapshotService.collect(ACCOUNT)).thenReturn(emptySnapshot());
+        JsonMapper mapper = JsonMapper.builder().findAndAddModules().build();
+        XRayReport previous = mock(XRayReport.class);
+        when(previous.getId()).thenReturn(7L);
+        when(previous.getMetricsJson()).thenReturn(mapper.writeValueAsString(
+                new XRayCalculator().calculate(emptySnapshot(), Position.MID)));
+        CoachDiagnosis previousDiagnosis = mock(CoachDiagnosis.class);
+        when(previousDiagnosis.getId()).thenReturn(9L);
+        when(previousDiagnosis.getText()).thenReturn("## Foco 1");
+        when(history.latest(ACCOUNT)).thenReturn(Optional.of(previous));
+        when(history.diagnoses(7L)).thenReturn(List.of(previousDiagnosis));
+        when(history.goals(9L)).thenReturn(List.of(
+                new FocusGoal(previousDiagnosis, 1, "Vencer mais", FocusMetric.WIN_RATE, null, 0.4, 0.5)));
+
+        command(0).run(new DefaultApplicationArguments());
+
+        assertThat(Files.readString(dir.resolve("fase0/raio-x-34839344.md"))).contains(
+                "## Metas do último diagnóstico", "| 1. Vencer mais | Taxa de vitória | 40,0% | ≥ 50,0% | — | sem dados |");
     }
 
     @Test
