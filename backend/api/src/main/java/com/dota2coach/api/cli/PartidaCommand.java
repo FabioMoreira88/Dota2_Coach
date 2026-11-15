@@ -1,5 +1,7 @@
 package com.dota2coach.api.cli;
 
+import com.dota2coach.analysis.evolution.FocusGoalCheck;
+import com.dota2coach.analysis.evolution.FocusGoalChecker;
 import com.dota2coach.analysis.metric.MatchAnalysis;
 import com.dota2coach.analysis.metric.MatchAnalysisCalculator;
 import com.dota2coach.analysis.metric.ProfileXRay;
@@ -28,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -102,7 +105,11 @@ public class PartidaCommand implements ApplicationRunner {
         XRayReport latestReport = history.latest(properties.accountId()).orElse(null);
         MatchAnalysis analysis = calculator.analyze(snapshot, properties.accountId(), properties.position(),
                 xRayOf(latestReport));
-        String markdown = renderer.render(analysis);
+        CoachDiagnosis currentDiagnosis = latestReport == null || latestReport.getId() == null ? null
+                : history.diagnoses(latestReport.getId()).stream().findFirst().orElse(null);
+        List<FocusGoalCheck> goals = currentDiagnosis == null || currentDiagnosis.getId() == null ? List.of()
+                : FocusGoalChecker.checkMatch(analysis, history.goals(currentDiagnosis.getId()));
+        String markdown = renderer.render(analysis, goals);
         Path output = write(Path.of(properties.resolvedOutput()), markdown);
         log.info("Partida: relatório salvo em {}", output);
 
@@ -112,7 +119,7 @@ public class PartidaCommand implements ApplicationRunner {
 
         if (properties.comment()) {
             if (analysis.replayParsed()) {
-                comment(review, latestReport, output);
+                comment(review, currentDiagnosis, output);
             } else {
                 log.warn("Partida: sem replay analisado o coach teria só o resumo; o comentário fica para quando"
                         + " você rodar de novo, com o replay pronto.");
@@ -120,7 +127,7 @@ public class PartidaCommand implements ApplicationRunner {
         }
     }
 
-    private void comment(MatchReview review, XRayReport latestReport, Path reportFile) {
+    private void comment(MatchReview review, CoachDiagnosis currentDiagnosis, Path reportFile) {
         String name = properties.coachProvider();
         CoachProperties.Provider provider = coachProperties.providers().get(name);
         if (provider == null) {
@@ -129,9 +136,7 @@ public class PartidaCommand implements ApplicationRunner {
         if (provider.apiKeyRequired() && !provider.hasApiKey()) {
             throw new IllegalStateException("Falta a chave do provedor '" + name + "' no .env");
         }
-        String currentFocus = latestReport == null || latestReport.getId() == null ? null
-                : history.diagnoses(latestReport.getId()).stream().findFirst().map(CoachDiagnosis::getText)
-                        .orElse(null);
+        String currentFocus = currentDiagnosis == null ? null : currentDiagnosis.getText();
         log.info("Partida: o coach está comentando com {} (leva cerca de 1 minuto)...", name);
         CoachReply reply = clientFactory.apply(name, provider)
                 .generate(CoachPromptFactory.fromMatchAnalysis(review.getMarkdown(), currentFocus));
