@@ -28,6 +28,7 @@ import com.dota2coach.core.model.PlayerSummary;
 import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.SteamId;
 import com.dota2coach.core.model.XRayReport;
+import com.dota2coach.core.service.MatchReviewService;
 import com.dota2coach.core.service.XRayHistoryService;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.nio.file.Files;
@@ -56,6 +57,7 @@ class RaioXCommandTest {
 
     private final ProfileSnapshotService snapshotService = mock(ProfileSnapshotService.class);
     private final XRayHistoryService history = mock(XRayHistoryService.class);
+    private final MatchReviewService reviews = mock(MatchReviewService.class);
     private final List<CoachPrompt> prompts = new ArrayList<>();
     private String replyText = "## Foco 1";
 
@@ -90,7 +92,7 @@ class RaioXCommandTest {
             }
         };
         return new RaioXCommand(snapshotService, new XRayCalculator(), new XRayMarkdownRenderer(props.zone()), props,
-                history, JsonMapper.builder().findAndAddModules().build(), coach, factory,
+                history, reviews, JsonMapper.builder().findAndAddModules().build(), coach, factory,
                 Clock.fixed(Instant.parse("2026-11-13T12:00:00Z"), ZoneOffset.UTC));
     }
 

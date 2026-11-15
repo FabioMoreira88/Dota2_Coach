@@ -1,7 +1,9 @@
 package com.dota2coach.core.service;
 
+import com.dota2coach.core.model.MatchAreaScore;
 import com.dota2coach.core.model.MatchReview;
 import com.dota2coach.core.model.MatchReviewComment;
+import com.dota2coach.core.repository.MatchAreaScoreRepository;
 import com.dota2coach.core.repository.MatchReviewCommentRepository;
 import com.dota2coach.core.repository.MatchReviewRepository;
 import java.util.List;
@@ -14,10 +16,13 @@ public class MatchReviewService {
 
     private final MatchReviewRepository reviews;
     private final MatchReviewCommentRepository comments;
+    private final MatchAreaScoreRepository scores;
 
-    public MatchReviewService(MatchReviewRepository reviews, MatchReviewCommentRepository comments) {
+    public MatchReviewService(MatchReviewRepository reviews, MatchReviewCommentRepository comments,
+            MatchAreaScoreRepository scores) {
         this.reviews = reviews;
         this.comments = comments;
+        this.scores = scores;
     }
 
     @Transactional
@@ -39,5 +44,16 @@ public class MatchReviewService {
     @Transactional(readOnly = true)
     public List<MatchReviewComment> comments(long reviewId) {
         return comments.findByReviewIdOrderByGeneratedAtDesc(reviewId);
+    }
+
+    @Transactional
+    public List<MatchAreaScore> saveScores(List<MatchAreaScore> areaScores) {
+        return scores.saveAll(areaScores);
+    }
+
+    /** Notas por área de todas as partidas comentadas da conta, da mais recente para a mais antiga. */
+    @Transactional(readOnly = true)
+    public List<MatchAreaScore> scores(long accountId) {
+        return scores.findByAccountIdOrderByScoredAtDesc(accountId);
     }
 }

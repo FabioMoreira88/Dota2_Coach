@@ -1,5 +1,6 @@
 package com.dota2coach.api.cli;
 
+import com.dota2coach.analysis.evolution.AreaTrendCalculator;
 import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.evolution.FocusGoalChecker;
 import com.dota2coach.analysis.evolution.XRayEvolution;
@@ -18,6 +19,7 @@ import com.dota2coach.core.model.CoachDiagnosis;
 import com.dota2coach.core.model.FocusGoal;
 import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.XRayReport;
+import com.dota2coach.core.service.MatchReviewService;
 import com.dota2coach.core.service.XRayHistoryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -55,6 +57,7 @@ public class RaioXCommand implements ApplicationRunner {
     private final XRayMarkdownRenderer renderer;
     private final RaioXProperties properties;
     private final XRayHistoryService history;
+    private final MatchReviewService reviews;
     private final ObjectMapper objectMapper;
     private final CoachProperties coachProperties;
     private final CoachClientFactory clientFactory;
@@ -66,6 +69,7 @@ public class RaioXCommand implements ApplicationRunner {
             XRayMarkdownRenderer renderer,
             RaioXProperties properties,
             XRayHistoryService history,
+            MatchReviewService reviews,
             ObjectMapper objectMapper,
             CoachProperties coachProperties,
             CoachClientFactory clientFactory,
@@ -75,6 +79,7 @@ public class RaioXCommand implements ApplicationRunner {
         this.renderer = renderer;
         this.properties = properties;
         this.history = history;
+        this.reviews = reviews;
         this.objectMapper = objectMapper;
         this.coachProperties = coachProperties;
         this.clientFactory = clientFactory;
@@ -108,7 +113,8 @@ public class RaioXCommand implements ApplicationRunner {
         CoachDiagnosis previousDiagnosis = previous == null ? null : previousDiagnosis(previous);
         List<FocusGoalCheck> goals = previousDiagnosis == null || previousDiagnosis.getId() == null ? List.of()
                 : FocusGoalChecker.checkXRay(xRay, history.goals(previousDiagnosis.getId()));
-        String markdown = renderer.render(xRay, evolution, goals);
+        String markdown = renderer.render(xRay, evolution, goals,
+                AreaTrendCalculator.trends(reviews.scores(accountId), null));
         Path output = write(Path.of(properties.resolvedOutput()), markdown);
         log.info("Raio-X: relatório salvo em {}", output);
 

@@ -5,6 +5,7 @@ import static com.dota2coach.analysis.report.XRayMarkdownRenderer.escape;
 import static com.dota2coach.analysis.report.XRayMarkdownRenderer.pct;
 import static com.dota2coach.analysis.report.XRayMarkdownRenderer.percentile;
 
+import com.dota2coach.analysis.evolution.AreaTrend;
 import com.dota2coach.analysis.evolution.FocusGoalCheck;
 import com.dota2coach.analysis.metric.MatchAnalysis;
 import com.dota2coach.analysis.metric.MatchAnalysis.Context;
@@ -60,10 +61,19 @@ public class MatchAnalysisMarkdownRenderer {
      * @param goals metas do último diagnóstico conferidas com esta partida; vazio quando não há
      */
     public String render(MatchAnalysis a, List<FocusGoalCheck> goals) {
+        return render(a, goals, List.of());
+    }
+
+    /**
+     * @param areaTrends notas por área das partidas comentadas antes desta; vazio quando não há
+     */
+    public String render(MatchAnalysis a, List<FocusGoalCheck> goals, List<AreaTrend> areaTrends) {
         StringBuilder md = new StringBuilder();
         header(md, a);
         summary(md, a);
         FocusGoalMarkdown.match(md, goals);
+        AreaTrendMarkdown.render(md, "Suas notas por área nas partidas anteriores",
+                "Notas de 0 a 10 que o coach deu nas partidas que você revisou antes desta.", areaTrends);
         context(md, a);
         if (!a.replayParsed()) {
             md.append("## Replay ainda não analisado\n\n")
