@@ -58,6 +58,12 @@ O relatório sai em `docs/fase0/raio-x-34839344.md`. Opções extras, no mesmo `
   e também fica no banco, ligado ao Raio-X.
 - `--dota2coach.raio-x.parse-limit=0`: não pedir análise de replays (padrão: até 20 partidas recentes).
 
+A partir do segundo Raio-X da conta, o relatório abre com **Evolução desde o último Raio-X**: quantas partidas
+novas entraram, e uma tabela de antes e agora com taxa de vitória, fundamentos das últimas 20, last hits e denies
+aos 10 min, mortes por fase, tempo morto e as médias dos heróis mais jogados, cada linha marcada como melhorou,
+igual (diferença dentro de 5%) ou piorou. Com `diagnose=true`, o diagnóstico anterior vai junto para o coach, que
+abre com "Como foram seus focos", meta por meta, e diz quais focos manteve e quais trocou.
+
 Na primeira execução o comando pede à OpenDota a análise dos replays recentes ainda não analisados. Rode de novo
 uns 15 minutos depois para que rotas e itens dessas partidas entrem no relatório.
 

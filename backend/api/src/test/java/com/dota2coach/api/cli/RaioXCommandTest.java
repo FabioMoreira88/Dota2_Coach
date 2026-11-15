@@ -38,6 +38,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -135,6 +136,40 @@ class RaioXCommandTest {
         assertThat(saved.getValue().getCostUsd()).isEqualByComparingTo("0.1000");
         assertThat(saved.getValue().getText()).isEqualTo("## Foco 1");
         assertThat(Files.readString(dir.resolve("fase0/diagnostico-34839344.md"))).isEqualTo("## Foco 1\n");
+    }
+
+    @Test
+    void comRaioXAnteriorMostraAEvolucaoEConfereOsFocos() throws Exception {
+        when(snapshotService.collect(ACCOUNT)).thenReturn(emptySnapshot());
+        JsonMapper mapper = JsonMapper.builder().findAndAddModules().build();
+        String previousJson = mapper.writeValueAsString(
+                new XRayCalculator().calculate(emptySnapshot(), Position.CARRY));
+        XRayReport previous = mock(XRayReport.class);
+        when(previous.getId()).thenReturn(7L);
+        when(previous.getMetricsJson()).thenReturn(previousJson);
+        when(history.latest(ACCOUNT)).thenReturn(Optional.of(previous));
+        when(history.diagnoses(7L)).thenReturn(List.of(new CoachDiagnosis(previous, "claude", "m",
+                Instant.parse("2026-11-01T12:00:00Z"), 1, 1, java.math.BigDecimal.ONE, "Meta: 45 last hits aos 10 min")));
+
+        command(0, true, "chave").run(new DefaultApplicationArguments());
+
+        assertThat(Files.readString(dir.resolve("fase0/raio-x-34839344.md"))).contains(
+                "## Evolução desde o último Raio-X", "Nenhuma partida nova desde então",
+                "A posição informada mudou de Carry (posição 1) para Meio (posição 2)");
+        assertThat(prompts.get(0).user()).contains("<diagnostico_anterior>\nMeta: 45 last hits aos 10 min");
+    }
+
+    @Test
+    void raioXAnteriorIlegivelNaoImpedeONovo() throws Exception {
+        when(snapshotService.collect(ACCOUNT)).thenReturn(emptySnapshot());
+        XRayReport previous = mock(XRayReport.class);
+        when(previous.getMetricsJson()).thenReturn("{\"formato\":\"antigo\"}");
+        when(history.latest(ACCOUNT)).thenReturn(Optional.of(previous));
+
+        command(0).run(new DefaultApplicationArguments());
+
+        assertThat(Files.readString(dir.resolve("fase0/raio-x-34839344.md"))).doesNotContain("## Evolução");
+        verify(history).saveReport(any());
     }
 
     @Test

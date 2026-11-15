@@ -20,6 +20,14 @@ public final class CoachPromptFactory {
             - A seção de partidas com replay analisado traz fase de rotas (last hits aos 10 minutos), em que fase \
             o jogador morre e o minuto em que compra os itens principais. São os dados mais concretos do relatório: \
             use-os para exercícios específicos, lembrando que vêm de poucas partidas.
+            - Se vier o diagnóstico anterior do jogador, abra com uma seção chamada "Como foram seus focos". Para \
+            cada foco do diagnóstico anterior, compare a meta dele com os números de agora (use a seção "Evolução \
+            desde o último Raio-X") e diga em uma linha se o jogador atingiu a meta, avançou, ficou igual ou \
+            piorou, citando o antes e o agora. Se a seção de evolução disser que há poucas partidas novas, avise \
+            que ainda é cedo para concluir. Sem número para conferir um foco, diga isso em vez de supor.
+            - Com o diagnóstico anterior, mantenha um foco cuja meta ainda não foi atingida, a não ser que outro \
+            problema tenha ficado claramente mais importante; troque um foco cuja meta foi atingida. Diga em uma \
+            frase o que foi mantido e o que mudou.
             - Escolha no máximo 3 focos de melhoria, do mais importante para o menos importante. Prefira focos que o \
             jogador controla e que dá para medir no próximo Raio-X.
             - Para cada foco, escreva: o que os números mostram (cite os números), por que isso custa partidas, um \
@@ -27,7 +35,7 @@ public final class CoachPromptFactory {
             - Não sugira picks durante o draft nem nada para usar dentro de uma partida em andamento. A análise é \
             sempre feita fora do jogo.
             - Termine com um ponto forte do jogador, apoiado nos números.
-            - Escreva em português do Brasil, em Markdown, com no máximo 600 palavras. Use um tom direto e \
+            - Escreva em português do Brasil, em Markdown, com no máximo 750 palavras. Use um tom direto e \
             encorajador, de coach experiente, adequado à medalha que aparece no relatório.
             """;
 
@@ -108,12 +116,28 @@ public final class CoachPromptFactory {
     private CoachPromptFactory() {}
 
     public static CoachPrompt fromXRayReport(String xRayMarkdown) {
+        return fromXRayReport(xRayMarkdown, null);
+    }
+
+    /**
+     * Prompt para o diagnóstico de um Raio-X.
+     *
+     * @param xRayMarkdown Raio-X atual, com a seção de evolução quando há um Raio-X anterior
+     * @param previousDiagnosis diagnóstico do Raio-X anterior, com os focos e metas; nulo ou vazio se não há
+     */
+    public static CoachPrompt fromXRayReport(String xRayMarkdown, String previousDiagnosis) {
         if (xRayMarkdown == null || xRayMarkdown.isBlank()) {
             throw new IllegalArgumentException("O relatório Raio-X está vazio");
         }
-        String user = "Raio-X do jogador:\n\n<raio_x>\n" + xRayMarkdown.strip() + "\n</raio_x>\n\n"
-                + "Escreva o diagnóstico seguindo as regras.";
-        return new CoachPrompt(SYSTEM, user);
+        StringBuilder user = new StringBuilder("Raio-X do jogador:\n\n<raio_x>\n").append(xRayMarkdown.strip())
+                .append("\n</raio_x>\n\n");
+        if (previousDiagnosis != null && !previousDiagnosis.isBlank()) {
+            user.append("Diagnóstico anterior, com os focos e metas que o jogador treinou desde então:\n\n")
+                    .append("<diagnostico_anterior>\n").append(previousDiagnosis.strip())
+                    .append("\n</diagnostico_anterior>\n\n");
+        }
+        user.append("Escreva o diagnóstico seguindo as regras.");
+        return new CoachPrompt(SYSTEM, user.toString());
     }
 
     /**

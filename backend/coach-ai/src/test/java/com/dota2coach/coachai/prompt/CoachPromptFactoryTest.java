@@ -17,6 +17,17 @@ class CoachPromptFactoryTest {
     }
 
     @Test
+    void raioXComDiagnosticoAnteriorPedeAConferenciaDosFocos() {
+        CoachPrompt prompt = CoachPromptFactory.fromXRayReport("# Raio-X", "## Foco 1: meta 45 last hits");
+
+        assertThat(prompt.user()).contains(
+                "<diagnostico_anterior>\n## Foco 1: meta 45 last hits\n</diagnostico_anterior>");
+        assertThat(prompt.system()).contains("Como foram seus focos", "Evolução desde o último Raio-X",
+                "ainda é cedo para concluir", "no máximo 750 palavras");
+        assertThat(CoachPromptFactory.fromXRayReport("# Raio-X", " ").user()).doesNotContain("diagnostico_anterior");
+    }
+
+    @Test
     void recusaRelatorioVazio() {
         assertThatThrownBy(() -> CoachPromptFactory.fromXRayReport("  "))
                 .isInstanceOf(IllegalArgumentException.class);

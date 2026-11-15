@@ -1,5 +1,7 @@
 package com.dota2coach.api.cli;
 
+import com.dota2coach.analysis.evolution.XRayEvolution;
+import com.dota2coach.analysis.evolution.XRayEvolutionCalculator;
 import com.dota2coach.analysis.metric.ProfileXRay;
 import com.dota2coach.analysis.metric.XRayCalculator;
 import com.dota2coach.analysis.report.XRayMarkdownRenderer;
@@ -14,6 +16,7 @@ import com.dota2coach.core.model.ProfileSnapshot;
 import com.dota2coach.core.model.XRayReport;
 import com.dota2coach.core.service.XRayHistoryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -95,7 +98,9 @@ public class RaioXCommand implements ApplicationRunner {
         }
 
         ProfileXRay xRay = calculator.calculate(snapshot, properties.position());
-        String markdown = renderer.render(xRay);
+        XRayReport previous = history.latest(accountId).orElse(null);
+        XRayEvolution evolution = evolution(previous, xRay);
+        String markdown = renderer.render(xRay, evolution);
         Path output = write(Path.of(properties.resolvedOutput()), markdown);
         log.info("Raio-X: relatório salvo em {}", output);
 
@@ -104,11 +109,36 @@ public class RaioXCommand implements ApplicationRunner {
         log.info("Raio-X: guardado no histórico (Raio-X nº {} desta conta).", history.count(accountId));
 
         if (properties.diagnose()) {
-            diagnose(report, output);
+            diagnose(report, output, previous == null ? null : previousDiagnosis(previous));
         }
     }
 
-    private void diagnose(XRayReport report, Path reportFile) {
+    /** Compara com o Raio-X anterior; sem anterior, ou com um formato antigo que não dá para ler, não compara. */
+    private XRayEvolution evolution(XRayReport previous, ProfileXRay current) {
+        if (previous == null) {
+            log.info("Raio-X: primeiro Raio-X desta conta, sem comparação de evolução.");
+            return null;
+        }
+        try {
+            ProfileXRay before = objectMapper.readerFor(ProfileXRay.class)
+                    .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .readValue(previous.getMetricsJson());
+            return XRayEvolutionCalculator.compare(before, current);
+        } catch (JsonProcessingException | RuntimeException e) {
+            log.warn("Raio-X: não deu para ler o Raio-X anterior ({}); o relatório sai sem a seção de evolução.",
+                    e.getMessage());
+            return null;
+        }
+    }
+
+    private String previousDiagnosis(XRayReport previous) {
+        if (previous.getId() == null) {
+            return null;
+        }
+        return history.diagnoses(previous.getId()).stream().findFirst().map(CoachDiagnosis::getText).orElse(null);
+    }
+
+    private void diagnose(XRayReport report, Path reportFile, String previousDiagnosis) {
         String name = properties.coachProvider();
         CoachProperties.Provider provider = coachProperties.providers().get(name);
         if (provider == null) {
@@ -118,8 +148,11 @@ public class RaioXCommand implements ApplicationRunner {
             throw new IllegalStateException("Falta a chave do provedor '" + name + "' no .env");
         }
         log.info("Diagnóstico: gerando com {} (leva cerca de 1 minuto)...", name);
+        if (previousDiagnosis != null) {
+            log.info("Diagnóstico: o coach vai conferir os focos do diagnóstico anterior.");
+        }
         CoachReply reply = clientFactory.apply(name, provider)
-                .generate(CoachPromptFactory.fromXRayReport(report.getMarkdown()));
+                .generate(CoachPromptFactory.fromXRayReport(report.getMarkdown(), previousDiagnosis));
         BigDecimal cost = BigDecimal.valueOf(provider.pricing().cost(reply.inputTokens(), reply.outputTokens()))
                 .setScale(4, RoundingMode.HALF_UP);
         history.saveDiagnosis(new CoachDiagnosis(report, name, reply.model(), clock.instant(),
