@@ -1,5 +1,6 @@
 package com.dota2coach.analysis.report;
 
+import com.dota2coach.analysis.evolution.XRayEvolution;
 import com.dota2coach.analysis.metric.ProfileXRay;
 import com.dota2coach.analysis.metric.ProfileXRay.DeathPhase;
 import com.dota2coach.analysis.metric.ProfileXRay.HeroBenchmarkLine;
@@ -38,8 +39,16 @@ public class XRayMarkdownRenderer {
     }
 
     public String render(ProfileXRay x) {
+        return render(x, null);
+    }
+
+    /**
+     * @param evolution comparação com o Raio-X anterior da conta, ou nulo no primeiro Raio-X
+     */
+    public String render(ProfileXRay x, XRayEvolution evolution) {
         StringBuilder md = new StringBuilder();
         header(md, x);
+        evolution(md, x, evolution);
         overview(md, x);
         heroes(md, x);
         lanes(md, x);
@@ -60,6 +69,73 @@ public class XRayMarkdownRenderer {
                 .append(x.mainPosition() == null ? "não informada" : x.mainPosition().label()).append('\n');
         md.append("- **Fonte:** OpenDota, partidas \"significativas\" (sem Turbo e modos de evento)\n");
         md.append("- **Recorte recente:** últimas ").append(x.recentWindow()).append(" partidas\n\n");
+    }
+
+    private void evolution(StringBuilder md, ProfileXRay x, XRayEvolution e) {
+        if (e == null) {
+            return;
+        }
+        md.append("## Evolução desde o último Raio-X\n\n");
+        md.append("Comparação com o Raio-X de ").append(date(e.previousAt())).append(". ");
+        if (e.newMatches() == 0) {
+            md.append("Nenhuma partida nova desde então, então os números quase não mudam.\n\n");
+        } else {
+            md.append(matches(e.newMatches())).append(e.newMatches() == 1 ? " nova" : " novas").append(" desde então");
+            if (e.newMatches() < e.recentWindow()) {
+                md.append("; as outras ").append(e.recentWindow() - e.newMatches())
+                        .append(" do recorte recente já estavam no Raio-X anterior, então a mudança aparece aos poucos");
+            }
+            md.append(".\n\n");
+        }
+        if (e.previousPosition() != x.mainPosition()) {
+            md.append("A posição informada mudou de ")
+                    .append(e.previousPosition() == null ? "não informada" : e.previousPosition().label())
+                    .append(" para ").append(x.mainPosition() == null ? "não informada" : x.mainPosition().label())
+                    .append(", então parte da diferença vem da troca de posição.\n\n");
+        }
+        md.append("Uma métrica conta como igual quando a diferença fica dentro de 5% do valor anterior.\n\n");
+        String group = null;
+        for (XRayEvolution.Change c : e.changes()) {
+            if (!c.group().equals(group)) {
+                if (group != null) {
+                    md.append('\n');
+                }
+                group = c.group();
+                md.append("**").append(escape(group)).append("**\n\n");
+                md.append("| Métrica | Antes | Agora | Variação | Resultado |\n|---|---:|---:|---:|---|\n");
+            }
+            md.append("| ").append(escape(c.label()))
+                    .append(" | ").append(evolutionValue(c.before(), c.format()))
+                    .append(" | ").append(evolutionValue(c.after(), c.format()))
+                    .append(" | ").append(c.before() == null || c.after() == null ? "—"
+                            : evolutionDelta(c.after() - c.before(), c.format()))
+                    .append(" | ").append(c.trend().label()).append(" |\n");
+        }
+        md.append('\n');
+    }
+
+    private static String evolutionValue(Double value, XRayEvolution.Format format) {
+        if (value == null) {
+            return "—";
+        }
+        return switch (format) {
+            case PERCENT -> pct(value);
+            case SECONDS -> minutesSeconds(value);
+            case DECIMAL -> dec(value);
+        };
+    }
+
+    private static String evolutionDelta(double delta, XRayEvolution.Format format) {
+        return switch (format) {
+            case PERCENT -> signedPoints(delta);
+            case SECONDS -> (delta < 0 ? "-" : "+") + minutesSeconds(Math.abs(delta));
+            case DECIMAL -> signed(delta);
+        };
+    }
+
+    private static String minutesSeconds(double seconds) {
+        long s = Math.round(seconds);
+        return s / 60 + ":" + String.format("%02d", s % 60);
     }
 
     private void overview(StringBuilder md, ProfileXRay x) {
