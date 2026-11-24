@@ -30,7 +30,7 @@
         <!-- Só o módulo api tem classe main; os outros pulam o spring-boot:run. -->
         <spring-boot.run.skip>true</spring-boot.run.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <anthropic-java.version>3.8.0</anthropic-java.version>
+        <anthropic-java.version>3.12.0</anthropic-java.version>
     </properties>
 
     <dependencyManagement>
